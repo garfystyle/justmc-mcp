@@ -72,20 +72,70 @@
 
 ## Установка
 
-Нужен Node 22.13 или новее.
+Нужен [Node.js](https://nodejs.org) 22.13 или новее. Одна команда скачивает MCP в `~/.justmc-mcp/app`, собирает базу
+знаний и подключает сервер и скилл ко всем найденным программам.
 
-```bash
-git clone https://github.com/garfystyle/justmc-mcp
-cd justmc-mcp
-npm install
-npm run crawl
-npm run learn
-npm run skill
-claude mcp add --scope user justmc -- node /путь/к/justmc-mcp/src/index.mjs
+**Windows** (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/garfystyle/justmc-mcp/main/install.ps1 | iex
 ```
 
-`crawl` качает открытые модули каталога JustMC в `data/` и соблюдает лимит сервера: прервался — продолжит с места
-остановки. `learn` собирает из них базу знаний, `skill` ставит скилл в `~/.claude/skills/justmc`.
+**macOS и Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/garfystyle/justmc-mcp/main/install.sh | sh
+```
+
+Обновить — та же команда. Поставил новую программу — запусти её ещё раз, она подключит и её. После установки
+программы нужно перезапустить.
+
+| Программа | Куда пишется сервер |
+|:--|:--|
+| Claude Code | `claude mcp add --scope user` |
+| Claude Desktop | `claude_desktop_config.json` |
+| Codex CLI | `~/.codex/config.toml`, предел вызова 15 минут |
+| Gemini CLI | `~/.gemini/settings.json` |
+| Antigravity | `~/.gemini/config/mcp_config.json` |
+| Qwen Code | `~/.qwen/settings.json` |
+| GitHub Copilot CLI и VS Code | `~/.copilot/mcp-config.json`; VS Code до 1.143 — `mcp.json` профиля |
+| Cursor | `~/.cursor/mcp.json` |
+| OpenCode | `~/.config/opencode/opencode.json` |
+| Kilo Code CLI | `~/.config/kilo/kilo.json` |
+| Crush | `~/.config/crush/crushrc` |
+| Goose | `config.yaml` Goose |
+| Amp | `~/.config/amp/settings.json` |
+| Kiro, Amazon Q Developer CLI | `~/.kiro/settings/mcp.json`, `~/.aws/amazonq/mcp.json` |
+| Factory Droid | `~/.factory/mcp.json` |
+| Augment Auggie | `~/.augment/settings.json` |
+| Cline | `~/.cline/data/settings/cline_mcp_settings.json` и расширение Cline |
+| Continue | `~/.continue/config.yaml`, если он уже есть |
+| Devin Desktop и Devin CLI (бывший Windsurf) | `mcp_config.json` Devin |
+| Zed | `settings.json` Zed, ключ `context_servers` |
+| Warp | `~/.warp/.mcp.json` |
+| Rovo Dev, Kimi Code, Mistral Vibe, Qoder, Junie, Grok, Pi, Cortex Code | свой файл MCP каждой программы |
+
+Скилл `justmc` ложится в общую папку `~/.agents/skills`, её читает большинство программ. Отдельные копии — для
+Claude Code (`~/.claude/skills`), Antigravity, Kiro, Copilot в VS Code, Cline и Pi.
+
+Чужие серверы, комментарии и отступы в конфигах остаются как были, файл с ошибкой разбора не трогается. Копия каждого
+файла перед правкой лежит в `~/.justmc-mcp/config-backups`.
+
+| Команда | Что делает |
+|:--|:--|
+| `node ~/.justmc-mcp/app/scripts/setup.mjs --dry` | показать, что изменится, ничего не записывая |
+| `node ~/.justmc-mcp/app/scripts/setup.mjs --only=codex,cursor` | подключить только эти программы |
+| `node ~/.justmc-mcp/app/scripts/setup.mjs --modules` | докачать модули JustMC для `examples`, около 50 минут |
+| `node ~/.justmc-mcp/app/scripts/setup.mjs --remove` | убрать сервер и скилл отовсюду |
+
+Без модулей работает всё, кроме `examples` и значений из чужого кода в `find full`: справочник и руководство уже в
+базе. На Windows те же команды работают с путём `%USERPROFILE%\.justmc-mcp\app\scripts\setup.mjs`.
+
+**Если вызов обрывается.** `test` идёт до нескольких минут, поэтому установщик поднимает предел времени там, где он
+настраивается. Cursor CLI и Continue обрывают любой вызов через 60 секунд, Claude Desktop — тоже рано: там
+`test` подолгу не дождаться. Gemini CLI не запускает MCP-серверы в папке, которой не доверяет.
+
+Из исходников: `git clone`, затем `npm install` и `npm run setup` в папке проекта.
 
 ## Проверка в игре
 
@@ -147,7 +197,8 @@ claude mcp add --scope user justmc -- node /путь/к/justmc-mcp/src/index.mjs
 |:--|:--|
 | `npm run crawl` | докачивает модули каталога, по лимиту сервера, с места остановки |
 | `npm run learn` | учится на модулях и собирает базу `data/knowledge.db` |
-| `npm run skill` | ставит скилл в `~/.claude/skills/justmc` |
+| `npm run setup` | подключить сервер и скилл ко всем найденным программам |
+| `npm run skill` | обновить только скилл Claude Code |
 | `npm run sync` | для разработки: берёт ядро Xero и справочник из соседней папки `justmc/xero` |
 | `npm run agent` | собирает агента в `vendor/agent.jar` |
 | `npm run verify` | проверяет код руководства сборкой и читаемостью, `-- --game` прогоняет рецепты на сервере |

@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync, renameSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { join } from "node:path";
 import { DATA, DB_FILE, RAW, REFERENCE } from "../src/paths.mjs";
@@ -22,6 +22,7 @@ const IDIOM_LENGTHS = [3, 4, 5];
 const CONTROL = /^(?:control_wait|control_end_thread|control_call_exception|else|repeat_|set_variable_value|set_variable_multiple|if_variable_equals|empty|call_function|start_process)/;
 
 const TEMP = `${DB_FILE}.new`;
+mkdirSync(DATA, { recursive: true });
 for (const f of [TEMP, `${TEMP}-wal`, `${TEMP}-shm`]) rmSync(f, { force: true });
 const db = new Database(TEMP);
 db.exec(`
@@ -55,10 +56,23 @@ CREATE INDEX assoc_word ON assoc(word);
 CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
 `);
 
+const PREFIXES = [["if_variable_", "var"], ["if_player_", "player"], ["if_entity_", "entity"], ["if_game_", "game"],
+  ["set_variable_", "var"], ["player_", "player"], ["entity_", "entity"], ["game_", "game"], ["select_", "select"],
+  ["controller_", "controller"], ["control_", "control"], ["repeat_", "repeat"]];
+
+function ruleName(id) {
+  const match = PREFIXES.find(([prefix]) => id.startsWith(prefix));
+  if (!match) return id;
+  const short = id.slice(match[0].length);
+  return !known.has(short) && known.has(`${match[1]}.${short}`) ? `${match[1]}.${short}` : short;
+}
+
 function loadNames() {
   const names = new Map();
+  const file = join(REFERENCE, "NAMES.md");
+  if (!existsSync(file)) return names;
   const row = /^\| \*\*`([^`]+)`\*\* \| `([^`]+)`/;
-  for (const line of readFileSync(join(REFERENCE, "NAMES.md"), "utf8").split(/\r?\n/)) {
+  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const m = line.match(row);
     if (m) names.set(m[2], m[1]);
     const spare = line.match(/сервер ставит `([^`]+)`/);
@@ -78,9 +92,10 @@ for (const r of reference) {
 db.exec("COMMIT");
 const known = new Set(reference.map((r) => r.name));
 const idName = loadNames();
-const nameOf = (id) => idName.get(id) ?? id;
+const nameOf = (id) => idName.get(id) ?? ruleName(id);
 
-const catalog = new Map(JSON.parse(readFileSync(join(DATA, "catalog.json"), "utf8")).modules.map((m) => [m.id, m]));
+const CATALOG = join(DATA, "catalog.json");
+const catalog = new Map(existsSync(CATALOG) ? JSON.parse(readFileSync(CATALOG, "utf8")).modules.map((m) => [m.id, m]) : []);
 const insertModule = db.prepare("INSERT INTO module VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 const insertChunk = db.prepare("INSERT INTO chunk(module,kind,name,line,length,weight,doc,tags,shape,code) VALUES(?,?,?,?,?,?,?,?,?,?)");
 const insertChunkFts = db.prepare("INSERT INTO chunk_fts(rowid,name,about,code) VALUES(?,?,?,?)");
@@ -196,7 +211,7 @@ const symbolModules = new Map();
 const wordSymbol = new Map();
 const firstChunk = new Map();
 const shapes = new Set();
-const files = readdirSync(RAW).filter((f) => f.endsWith(".json.gz"));
+const files = existsSync(RAW) ? readdirSync(RAW).filter((f) => f.endsWith(".json.gz")) : [];
 const started = Date.now();
 
 db.exec("BEGIN");

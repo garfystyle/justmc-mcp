@@ -23,7 +23,7 @@ export function staleParts() {
     notes.push("Код MCP новее запущенного процесса: работает старая версия. Перезапусти Claude Code, /clear процесс не обновляет.");
   }
   if (existsSync(INSTALLED_SKILL) && Math.max(newestFile(GUIDE), newestFile(SKILL_SOURCE)) > newestFile(INSTALLED_SKILL)) {
-    notes.push("Скилл justmc старее руководства: npm run skill.");
+    notes.push("Скилл justmc старее руководства: npm run setup.");
   }
   return notes;
 }
