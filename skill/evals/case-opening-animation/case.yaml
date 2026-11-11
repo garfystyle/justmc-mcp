@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: case-opening-animation
+expected_outcome: |
+  Рабочий main.xero с плавной анимацией визуализатора предмета и выдачей приза, устойчивой к выходу игрока.

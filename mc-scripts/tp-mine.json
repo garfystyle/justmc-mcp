@@ -1,0 +1,7 @@
+{
+  "name": "tp-mine",
+  "kind": "js",
+  "description": "Телепорт командой @t tp, чтобы сервер знал позицию, затем ломает блок: args.tp \"x y z\", args.x,y,z, args.face, args.ms",
+  "params": [],
+  "updated": "2026-11-07T19:32:01.557Z"
+}

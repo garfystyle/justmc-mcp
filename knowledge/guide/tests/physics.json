@@ -1,0 +1,553 @@
+[
+ {
+  "name": "векторы: сдвиг, между точками, поворот, отражение, круг, atan2, warp, ловушка v * 2",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@ph01\") {\n        end_thread()\n    }\n    cancel_event()\n    o = loc(0, 0, 0)\n    full = get_coordinate(shift_location_on_vector(o, vec(0, 3, 0)), type: y)\n    part = get_coordinate(shift_location_on_vector(o, vec(0, 3, 0), 1), type: y)\n    between = get_vector_between_locations(loc(1, 0, 0), loc(4, 4, 0))\n    send_message(\"ph01 сдвиг=${full} ${part} длина=${get_vector_length(between)}\")\n    get_vector_all_components(between, bx, by, bz)\n    send_message(\"ph01 из a в b=${bx} ${by} ${bz}\")\n    get_vector_all_components(rotate_vector_around_axis(vec(0, 0, 1), 90, axis: y), lx, ly, lz)\n    send_message(\"ph01 поворот=${round(lx)} ${round(lz)}\")\n    get_vector_all_components(reflect_vector_product(vec(1, -1, 0), vec(0, 1, 0), 0.5), rx, ry, rz)\n    send_message(\"ph01 отражение=${rx} ${ry}\")\n    a = 90\n    get_vector_all_components(vec(2 * cos(a), 0, 2 * sin(a)), ox, oy, oz)\n    send_message(\"ph01 круг=${round(ox)} ${round(oz)}\")\n    turn = atan2(1, 1)\n    send_message(\"ph01 atan2=${round(turn, 2)}\")\n    send_message(\"ph01 обёртка=${warp(350, -180, 180)}\")\n    twice = multiply_vector(between, 2)\n    get_vector_all_components(twice, tx, ty, tz)\n    wrong = between * 2\n    send_message(\"ph01 умножение=${tx} формула=${wrong}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph01z\") {\n        end_thread()\n    }\n    cancel_event()\n    get_vector_all_components(set_vector_length(vec(0, 0, 0), 1), zx, zy, zz)\n    send_message(\"ph01 ноль=${zx} ${zy} ${zz}\")\n}\n",
+  "steps": [
+   {
+    "say": "@ph01"
+   },
+   {
+    "expect": "ph01 сдвиг=-?3(\\.0+)? -?1(\\.0+)? длина=-?5(\\.0+)?"
+   },
+   {
+    "expect": "ph01 из a в b=-?3(\\.0+)? -?4(\\.0+)? -?0(\\.0+)?"
+   },
+   {
+    "expect": "ph01 поворот=-?1(\\.0+)? -?0(\\.0+)?"
+   },
+   {
+    "expect": "ph01 отражение=0\\.5 0\\.5"
+   },
+   {
+    "expect": "ph01 круг=-?0(\\.0+)? -?2(\\.0+)?"
+   },
+   {
+    "expect": "ph01 atan2=0\\.79"
+   },
+   {
+    "expect": "ph01 обёртка=-10(\\.0+)?"
+   },
+   {
+    "expect": "ph01 умножение=-?6(\\.0+)? формула="
+   },
+   {
+    "say": "@ph01z"
+   },
+   {
+    "expect": "ph01 ноль=\\S+ \\S+ \\S+"
+   }
+  ]
+ },
+ {
+  "name": "поворот: стороны по yaw, вперёд по земле, влево, sideways, угол из направления",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@ph02\") {\n        end_thread()\n    }\n    cancel_event()\n    get_vector_all_components(value.direction_of_view, dx, dy, dz)\n    ahead = rotate_vector_around_axis(vec(0, 0, 1), -value.yaw, axis: y)\n    get_vector_all_components(ahead, fx, fy, fz)\n    left = rotate_vector_around_axis(ahead, 90, axis: y)\n    get_vector_all_components(left, lx, ly, lz)\n    side = shift_location_in_direction(value.location, 1, direction: sideways)\n    get_vector_all_components(get_vector_between_locations(value.location, side), sx, sy, sz)\n    send_message(\"ph02 взгляд=${round(dx)} ${round(dz)} вперёд=${round(fx)} ${round(fz)} влево=${round(lx)} ${round(lz)} вбок=${round(sx)} ${round(sz)}\")\n    east = shift_coordinate(value.location, 5, type: x)\n    face = get_coordinate(var.face_location(value.location, east), type: yaw)\n    aim = get_coordinate(set_location_direction(value.location, vec(1, 0, 0)), type: yaw)\n    tilt = get_angle_between_vectors(value.direction_of_view, ahead)\n    send_message(\"ph02 восток=${round(face)} ${round(aim)} наклон=${round(tilt)}\")\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph02"
+   },
+   {
+    "expect": "ph02 взгляд=-?0(\\.0+)? -?1(\\.0+)? вперёд=-?0(\\.0+)? -?1(\\.0+)? влево=-?1(\\.0+)? -?0(\\.0+)? вбок=-1(\\.0+)? -?0(\\.0+)?"
+   },
+   {
+    "expect": "ph02 восток=270(\\.0+)? 270(\\.0+)? наклон=-?0(\\.0+)?"
+   },
+   {
+    "look": {
+     "yaw": -90,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph02"
+   },
+   {
+    "expect": "ph02 взгляд=-?1(\\.0+)? -?0(\\.0+)? вперёд=-?1(\\.0+)? -?0(\\.0+)? влево=-?0(\\.0+)? -1(\\.0+)? вбок=-?0(\\.0+)? -?1(\\.0+)?"
+   },
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 40
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph02"
+   },
+   {
+    "expect": "ph02 взгляд=-?0(\\.0+)? -?1(\\.0+)? вперёд=-?0(\\.0+)? -?1(\\.0+)?"
+   },
+   {
+    "expect": "ph02 восток=\\S+ \\S+ наклон=40(\\.0+)?"
+   }
+  ]
+ },
+ {
+  "name": "толчки игрока: increment, порядок, высота; value.velocity не видит ходьбу",
+  "code": "func ph03_show(label: text) {\n    get_vector_all_components(value.velocity, vx, vy, vz)\n    send_message(\"ph03 ${label} y=${round(vy, 2)} z=${round(vz, 2)}\")\n}\n\nprocess ph03_walk() {\n    wait(10)\n    was = value.location\n    wait(10)\n    walked = locations_distance(was, value.location, type: two_d)\n    seen = get_vector_length(set_vector_component(value.velocity, 0, vector_component: y))\n    send_message(\"ph03 прошёл=${round(walked)} внешняя=${round(seen, 1)}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph03\") {\n        end_thread()\n    }\n    cancel_event()\n    player.launch_up(0.5, increment: false)\n    ph03_show(\"вверх\")\n    wait(30)\n    player.launch_up(0.3, increment: false)\n    player.launch_up(0.3)\n    ph03_show(\"сумма\")\n    wait(30)\n    player.launch_up(0.5, increment: false)\n    player.launch_forward(0.4, increment: false, launch_axis: yaw)\n    ph03_show(\"стёрло\")\n    wait(30)\n    player.launch_forward(0.4, increment: false, launch_axis: yaw)\n    player.launch_up(0.5)\n    ph03_show(\"порядок\")\n    wait(30)\n    y0 = value.y_coordinate\n    player.launch_up(1, increment: false)\n    wait(12)\n    send_message(\"ph03 высота=${round(value.y_coordinate - y0)}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph03w\") {\n        end_thread()\n    }\n    cancel_event()\n    start ph03_walk()\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph03"
+   },
+   {
+    "expect": "ph03 вверх y=0\\.5"
+   },
+   {
+    "expect": "ph03 сумма y=0\\.6",
+    "timeout": 4000
+   },
+   {
+    "expect": "ph03 стёрло y=-?0(\\.0+)? z=0\\.4",
+    "timeout": 4000
+   },
+   {
+    "expect": "ph03 порядок y=0\\.5 z=0\\.4",
+    "timeout": 4000
+   },
+   {
+    "expect": "ph03 высота=[56]",
+    "timeout": 4000
+   },
+   {
+    "wait": 2500
+   },
+   {
+    "say": "@ph03w"
+   },
+   {
+    "move": {
+     "keys": [
+      "forward"
+     ],
+     "ms": 1300
+    }
+   },
+   {
+    "expect": "ph03 прошёл=[1-9]\\S* внешняя=-?0(\\.0+)?",
+    "timeout": 4000
+   }
+  ]
+ },
+ {
+  "name": "толчки сущностей: set_location не телепорт, кому не действует, launch_to_location зависит от расстояния",
+  "code": "func ph04_rise(name: text) {\n    entity_by_name(name)\n    y0 = @current value.y_coordinate\n    @current set_location(vec(0, 0.6, 0), increment: false)\n    wait(6)\n    rise = @current value.y_coordinate - y0\n    @default send_message(\"ph04 ${name}=${round(rise, 1)}\")\n    @current entity.remove()\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph04\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_armor_stand(location: shift_coordinate(value.location, 2, type: x), custom_name: \"ph04_free\", gravity: true, show_arms: false, invisible: false)\n    spawn_armor_stand(location: shift_coordinate(value.location, -2, type: x), custom_name: \"ph04_fixed\", gravity: false, show_arms: false, invisible: false)\n    spawn_mob(mob: item(husk_spawn_egg), location: shift_coordinate(value.location, 2, type: z), custom_name: \"ph04_noai\")\n    @last set_ai(ai: false)\n    wait(3)\n    ph04_rise(\"ph04_free\")\n    ph04_rise(\"ph04_fixed\")\n    ph04_rise(\"ph04_noai\")\n    spawn_armor_stand(location: value.location, custom_name: \"ph04_pull\", gravity: true, show_arms: false, invisible: false)\n    near = shift_coordinate(@last value.location, 2, type: x)\n    far = shift_coordinate(@last value.location, 10, type: x)\n    @last entity.launch_to_location(near, 0.5, increment: false)\n    s1 = get_vector_length(@last value.velocity)\n    @last entity.launch_to_location(far, 0.5, increment: false)\n    s2 = get_vector_length(@last value.velocity)\n    @last entity.remove()\n    @default send_message(\"ph04 к точке=${round(s1, 1)} ${round(s2, 1)} отношение=${round(s2 / s1)}\")\n}\n",
+  "steps": [
+   {
+    "say": "@ph04"
+   },
+   {
+    "expect": "ph04 ph04_free=[1-3]"
+   },
+   {
+    "expect": "ph04 ph04_fixed=-?0(\\.0+)?"
+   },
+   {
+    "expect": "ph04 ph04_noai=-?0(\\.0+)?"
+   },
+   {
+    "expect": "ph04 к точке=\\S+ \\S+ отношение=[45]"
+   },
+   {
+    "wait": 300
+   },
+   {
+    "java": "int n = 0; for (Object e : mc.level.entitiesForRendering()) { if (e.getName().getString().contains(\"ph04\")) n++; } return n;",
+    "equals": 0
+   }
+  ]
+ },
+ {
+  "name": "рывок: один толчок против вектора каждый тик",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@ph05\") {\n        end_thread()\n    }\n    cancel_event()\n    home = value.location\n    dir = rotate_vector_around_axis(vec(0, 0, 1), -value.yaw, axis: y)\n    back = multiply_vector(dir, -1)\n    player.launch_forward(1, increment: false, launch_axis: yaw)\n    wait(20)\n    one = locations_distance(home, value.location, type: two_d)\n    was = value.location\n    repeat 5 {\n        set_velocity(back, increment: false)\n        wait(1)\n    }\n    wait(15)\n    many = locations_distance(was, value.location, type: two_d)\n    send_message(\"ph05 толчок=${round(one)} рывок=${round(many)}\")\n    player.teleport(home)\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph05"
+   },
+   {
+    "expect": "ph05 толчок=[1-3](\\.0+)? рывок=[4-9](\\.0+)?",
+    "timeout": 6000
+   }
+  ]
+ },
+ {
+  "name": "двойной прыжок на клавишах: нажатие в воздухе, один раз, сброс на земле",
+  "code": "game `ph06 %player%`\n\nwhen player_input_event {\n    if not event_has_input(input_type: jump) or has_input(input_type: jump) {\n        return\n    }\n    if is_on_ground() {\n        `ph06 %player%` = 0\n        send_message(\"ph06 земля\")\n        return\n    }\n    if `ph06 %player%` == 1 {\n        send_message(\"ph06 лишний\")\n        return\n    }\n    `ph06 %player%` = 1\n    player.launch_up(0.6, increment: false)\n    send_message(\"ph06 второй\")\n}\n",
+  "steps": [
+   {
+    "wait": 500
+   },
+   {
+    "jump": true
+   },
+   {
+    "wait": 80
+   },
+   {
+    "jump": true
+   },
+   {
+    "wait": 80
+   },
+   {
+    "jump": true
+   },
+   {
+    "expect": "ph06 земля"
+   },
+   {
+    "expect": "ph06 второй"
+   },
+   {
+    "expect": "ph06 лишний"
+   },
+   {
+    "wait": 2500
+   },
+   {
+    "jump": true
+   },
+   {
+    "expect": "ph06 земля"
+   }
+  ]
+ },
+ {
+  "name": "двойной прыжок через полёт: разрешение после отрыва, два нажатия в воздухе",
+  "code": "when player_jump {\n    set_allow_flying()\n    send_message(\"ph07 разрешено\")\n}\n\nwhen player_start_flight {\n    cancel_event()\n    set_allow_flying(allow_flying: false)\n    player.launch_up(0.7, increment: false)\n    send_message(\"ph07 второй\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph07c\") {\n        end_thread()\n    }\n    cancel_event()\n    set_allow_flying(allow_flying: false)\n    send_message(\"ph07 убрано\")\n}\n",
+  "steps": [
+   {
+    "wait": 500
+   },
+   {
+    "jump": true
+   },
+   {
+    "wait": 60
+   },
+   {
+    "jump": true
+   },
+   {
+    "wait": 60
+   },
+   {
+    "jump": true
+   },
+   {
+    "expect": "ph07 разрешено"
+   },
+   {
+    "expect": "ph07 второй"
+   },
+   {
+    "wait": 1500
+   },
+   {
+    "say": "@ph07c"
+   },
+   {
+    "expect": "ph07 убрано"
+   }
+  ]
+ },
+ {
+  "name": "отскок от стены: один луч даёт точку и грань",
+  "code": "func ph08_wall_jump() {\n    hit = ray_trace_result(variable_for_hit_block_face: face, start: value.eye_location, max_distance: 1.5, ray_size: 0, ray_collision_mode: only_blocks)\n    if is_on_ground() or not var.is_type(hit, location) {\n        send_message(\"ph08 нет стены\")\n        return\n    }\n    normal = get_vector_from_block_face(face)\n    get_vector_all_components(normal, nx, ny, nz)\n    push = multiply_vector(normal, 0.6)\n    set_velocity(push + vec(0, 0.5, 0), increment: false)\n    send_message(\"ph08 грань=${face} нормаль=${round(nx)} ${round(nz)}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph08\") {\n        end_thread()\n    }\n    cancel_event()\n    wall = shift_location_in_direction(value.eye_location, 1, direction: forward)\n    low = shift_coordinate(wall, -1, type: y)\n    high = shift_coordinate(wall, 1, type: y)\n    set_block([low, wall, high], block(stone))\n    wait(2)\n    player.launch_up(0.42, increment: false)\n    wait(3)\n    z0 = value.z_coordinate\n    ph08_wall_jump()\n    wait(6)\n    send_message(\"ph08 отошёл=${round(z0 - value.z_coordinate)}\")\n    set_block([low, wall, high], block(air))\n    wait(20)\n    send_message(\"ph08 убрано\")\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph08"
+   },
+   {
+    "expect": "ph08 грань=north нормаль=-?0(\\.0+)? -1(\\.0+)?"
+   },
+   {
+    "expect": "ph08 отошёл=[1-4]"
+   },
+   {
+    "expect": "ph08 убрано"
+   },
+   {
+    "absent": "ph08 нет стены"
+   }
+  ]
+ },
+ {
+  "name": "гравитация атрибутом: лунный прыжок и возврат",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@ph09\") {\n        end_thread()\n    }\n    cancel_event()\n    y0 = value.y_coordinate\n    player.launch_up(0.5, increment: false)\n    wait(16)\n    plain = value.y_coordinate - y0\n    wait(10)\n    player.set_attribute(0.02, attribute_type: generic_gravity)\n    y0 = value.y_coordinate\n    player.launch_up(0.5, increment: false)\n    wait(14)\n    moon = value.y_coordinate - y0\n    player.set_attribute(0.08, attribute_type: generic_gravity)\n    send_message(\"ph09 обычная=${round(plain)} лунная=${round(moon)}\")\n    wait(30)\n    player.heal(20)\n    send_message(\"ph09 убрано\")\n}\n",
+  "steps": [
+   {
+    "say": "@ph09"
+   },
+   {
+    "expect": "ph09 обычная=-?0(\\.0+)? лунная=[3-7]"
+   },
+   {
+    "expect": "ph09 убрано",
+    "timeout": 4000
+   }
+  ]
+ },
+ {
+  "name": "своя физика: шар на визуализаторе падает, отскакивает, не проходит сквозь землю",
+  "code": "const BALL = \"ph10_ball\"\nconst FALL = vec(0, -0.04, 0)\n\ngame `ph10 %entity_uuid%`\ngame ph10_hits\n\nwhen entity_spawn {\n    wait(1)\n    if not entity.name_equals(BALL) {\n        return\n    }\n    `ph10 %entity_uuid%` = vec(0, 0, 0)\n    ph10_hits = 0\n    while entity.exists() {\n        wait(1)\n        v = `ph10 %entity_uuid%` + FALL\n        speed = get_vector_length(v)\n        hit = ray_trace_result(variable_for_hit_block_face: face, start: set_location_direction(value.location, v), max_distance: speed + 0.05, ray_size: 0, ray_collision_mode: only_blocks)\n        if var.is_type(hit, location) {\n            if ph10_hits == 0 {\n                @all send_message(\"ph10 удар грань=${face}\")\n            }\n            ph10_hits += 1\n            v = reflect_vector_product(v, get_vector_from_block_face(face), 0.7)\n        }\n        entity.teleport(shift_location_on_vector(value.location, v))\n        `ph10 %entity_uuid%` = v\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph10\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_block_display(shift_coordinate(value.location, 3, type: y), BALL, block(white_wool))\n    @last set_display_translation(vec(-0.5, -0.5, -0.5))\n    @last set_display_teleport_duration(1)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph10c\") {\n        end_thread()\n    }\n    cancel_event()\n    feet = value.y_coordinate\n    entity_by_name(BALL)\n    height = @current value.y_coordinate - feet\n    @current entity.remove()\n    wait(2)\n    entity_by_name(BALL)\n    @default send_message(\"ph10 высота=${round(height)} ударов=${ph10_hits} осталось=${value.selection_size}\")\n}\n",
+  "steps": [
+   {
+    "say": "@ph10"
+   },
+   {
+    "expect": "ph10 удар грань=up",
+    "timeout": 5000
+   },
+   {
+    "wait": 3000
+   },
+   {
+    "say": "@ph10c"
+   },
+   {
+    "expect": "ph10 высота=-?0(\\.0+)? ударов=[2-9]\\d*(\\.0+)? осталось=0"
+   }
+  ]
+ },
+ {
+  "name": "снаряд своими руками: один луч на тик находит тело и блок",
+  "code": "const MOB = \"ph11_mob\"\n\nfunc ph11_shell(power: number) {\n    pos = value.eye_location\n    fly = value.direction_of_view * power\n    repeat 60 {\n        step = get_vector_length(fly)\n        all_mobs()\n        stop = filter_by_raycast(set_location_direction(pos, fly), step, 0.3, 1, consider_blocks: true)\n        if value.selection_size > 0 {\n            @current entity.damage(5, value.uuid)\n            @default send_message(\"ph11 тело %selected%\")\n            return\n        }\n        if locations_distance(pos, stop) < step - 0.01 {\n            @default send_message(\"ph11 блок\")\n            return\n        }\n        pos = stop\n        fly = fly + vec(0, -0.03, 0)\n        wait(1)\n    }\n    @default send_message(\"ph11 мимо\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph11a\") {\n        end_thread()\n    }\n    cancel_event()\n    front = shift_location_on_vector(value.eye_location, value.direction_of_view, 8)\n    front = shift_coordinate(front, -1, type: y)\n    spawn_mob(mob: item(husk_spawn_egg), location: front, custom_name: MOB)\n    @last set_ai(ai: false)\n    send_message(\"ph11 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph11\") {\n        end_thread()\n    }\n    cancel_event()\n    ph11_shell(1)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph11c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_name(MOB)\n    hp = @current value.current_health\n    @current entity.remove()\n    @default send_message(\"ph11 здоровье=${hp}\")\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph11a"
+   },
+   {
+    "expect": "ph11 готово"
+   },
+   {
+    "wait": 500
+   },
+   {
+    "say": "@ph11"
+   },
+   {
+    "expect": "ph11 тело ph11_mob",
+    "timeout": 4000
+   },
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 50
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph11"
+   },
+   {
+    "expect": "ph11 блок",
+    "timeout": 4000
+   },
+   {
+    "say": "@ph11c"
+   },
+   {
+    "expect": "ph11 здоровье=1[3-6]"
+   },
+   {
+    "absent": "ph11 мимо"
+   }
+  ]
+ },
+ {
+  "name": "снаряд без стрелка: projectile_hit, грань, направление снаряда перевёрнуто, рикошет",
+  "code": "const BALL = \"ph12_ball\"\nconst SECOND = \"ph12_second\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph12\") {\n        end_thread()\n    }\n    cancel_event()\n    game.launch_projectile(item(snowball), value.eye_location, 1, 0, BALL)\n}\n\nwhen projectile_hit {\n    if not entity.name_equals(BALL) {\n        end_thread()\n    }\n    get_vector_all_components(value.velocity, vx, vy, vz)\n    get_vector_all_components(value.direction_of_view, dx, dy, dz)\n    down = \"нет\"\n    if vy < 0 {\n        down = \"да\"\n    }\n    up = \"нет\"\n    if dy > 0 {\n        up = \"да\"\n    }\n    @all send_message(\"ph12 грань=${value.event_block_face} падал=${down} взгляд вверх=${up}\")\n    normal = get_vector_from_block_face(value.event_block_face)\n    bounce = reflect_vector_product(value.velocity, normal, 0.6)\n    game.launch_projectile(item(snowball), shift_location_on_vector(value.location, normal, 0.3), 0.5, 0, SECOND)\n    @last set_location(bounce, increment: false)\n    entity.remove()\n}\n\nwhen projectile_hit {\n    if not entity.name_equals(SECOND) {\n        end_thread()\n    }\n    @all send_message(\"ph12 второй отскок\")\n    entity.remove()\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 30
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph12"
+   },
+   {
+    "expect": "ph12 грань=up падал=да взгляд вверх=да",
+    "timeout": 6000
+   },
+   {
+    "expect": "ph12 второй отскок",
+    "timeout": 6000
+   }
+  ]
+ },
+ {
+  "name": "машина: лодка, газ из value.steer_forward, выход Shift убирает лодку",
+  "code": "game `ph13 старт %player%`\ngame `ph13 газ %player%`\n\nprocess ph13_drive(id: text) {\n    speed = 0\n    wait(2)\n    while player.is_riding_entity(id, compare_mode: name_or_uuid) {\n        wait(1)\n        gas = value.steer_forward\n        if gas == 0 {\n            speed = speed * 0.95\n        } else {\n            `ph13 газ %player%` = gas\n            speed = clamp(speed + gas * 0.02, -0.2, 0.8)\n        }\n        entity_by_name(id)\n        @current entity.launch_forward(speed, increment: false, launch_axis: yaw)\n        reset()\n    }\n    entity_by_name(id)\n    @current entity.remove()\n    wait(2)\n    entity_by_name(id)\n    @default send_message(\"ph13 убрана размер=${value.selection_size}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph13\") {\n        end_thread()\n    }\n    cancel_event()\n    id = \"ph13_car %player%\"\n    `ph13 старт %player%` = value.location\n    `ph13 газ %player%` = 0\n    spawn_vehicle(item(oak_boat), value.location, id)\n    player.ride_entity(id)\n    start ph13_drive(id)\n    wait(3)\n    if player.is_riding_entity(id, compare_mode: name_or_uuid) {\n        send_message(\"ph13 сел\")\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph13d\") {\n        end_thread()\n    }\n    cancel_event()\n    gone = locations_distance(`ph13 старт %player%`, value.location, type: two_d)\n    send_message(\"ph13 уехал=${round(gone)} газ=${`ph13 газ %player%`}\")\n}\n",
+  "steps": [
+   {
+    "say": "@ph13"
+   },
+   {
+    "expect": "ph13 сел"
+   },
+   {
+    "wait": 300
+   },
+   {
+    "move": {
+     "keys": [
+      "forward"
+     ],
+     "ms": 1500
+    }
+   },
+   {
+    "say": "@ph13d"
+   },
+   {
+    "expect": "ph13 уехал=([1-9]|\\d\\d)\\S* газ=1(\\.0+)?"
+   },
+   {
+    "sneak": 700
+   },
+   {
+    "expect": "ph13 убрана размер=0",
+    "timeout": 4000
+   },
+   {
+    "java": "mc.player.isPassenger()",
+    "equals": false
+   }
+  ]
+ },
+ {
+  "name": "крюк-кошка: луч в блок, тяга каждый тик, остановка у цели",
+  "code": "const HOOK = item(tripwire_hook, name: \"&eКрюк\", tags: {tool: \"ph14\"})\n\ngame `ph14 %player%`\n\nprocess ph14_pull(point: location) {\n    repeat 40 {\n        wait(1)\n        if is_sneaking() or is_near(2.5, point, ignore_y_axis: false) {\n            stop_repeat()\n        }\n        to = get_vector_between_locations(value.location, point)\n        set_velocity(set_vector_length(to, 0.8), increment: false)\n        @all display_particle_line(particle(crit), value.eye_location, point, 0.5, unit_of_measurement: distance)\n    }\n    player.set_fall_distance(0)\n    send_message(\"ph14 дошёл=${round(locations_distance(value.location, point))}\")\n}\n\nwhen player_right_click {\n    if not item_has_tag(value.main_hand_item, \"tool\", \"ph14\") {\n        return\n    }\n    cancel_event()\n    hit = ray_trace_result(start: value.eye_location, max_distance: 30, ray_size: 0, ray_collision_mode: only_blocks)\n    if var.is_type(hit, location) {\n        start ph14_pull(hit)\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph14\") {\n        end_thread()\n    }\n    cancel_event()\n    set_equipment(HOOK, slot: hand)\n    `ph14 %player%` = shift_location_on_vector(value.eye_location, value.direction_of_view, 10)\n    set_block(`ph14 %player%`, block(stone))\n    wait(2)\n    send_message(\"ph14 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph14c\") {\n        end_thread()\n    }\n    cancel_event()\n    set_block(`ph14 %player%`, block(air))\n    remove_items(HOOK)\n    send_message(\"ph14 убрано\")\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph14"
+   },
+   {
+    "expect": "ph14 готово"
+   },
+   {
+    "wait": 300
+   },
+   {
+    "use": true
+   },
+   {
+    "expect": "ph14 дошёл=[0-3](\\.0+)?",
+    "timeout": 5000
+   },
+   {
+    "wait": 500
+   },
+   {
+    "say": "@ph14c"
+   },
+   {
+    "expect": "ph14 убрано"
+   }
+  ]
+ },
+ {
+  "name": "хитбоксы: сущность взаимодействия на модели, размеры, центр, проверка места",
+  "code": "func ph15_model(at: location) {\n    spawn_block_display(at, \"ph15_model\", block(gold_block))\n    body = @last value.uuid\n    @last set_display_translation(vec(-0.5, 0, -0.5))\n    spawn_interaction_entity(at, \"ph15_hit\", 1, 2)\n    @last entity.ride_entity(body)\n}\n\nwhen player_right_click_entity {\n    if @victim entity.name_equals(\"ph15_hit\") {\n        cancel_event()\n        send_message(\"ph15 клик по %victim%\")\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph15\") {\n        end_thread()\n    }\n    cancel_event()\n    front = shift_location_on_vector(value.eye_location, value.direction_of_view, 2.5)\n    ph15_model(shift_coordinate(front, -1, type: y))\n    wait(2)\n    entity_by_name(\"ph15_hit\")\n    h = @current value.entity_height\n    w = @current value.entity_width_x\n    @default send_message(\"ph15 хитбокс=${round(h, 1)} ${round(w, 1)} игрок=${round(value.entity_height, 1)} ${round(value.entity_width_x, 1)}\")\n    reset()\n    middle = get_coordinate(value.hitbox_midpoint_location, type: y) - value.y_coordinate\n    rock = shift_coordinate(value.location, 3, type: x)\n    set_block(rock, block(stone))\n    wait(2)\n    stuck = \"нет\"\n    if player.collides_at_location(rock) {\n        stuck = \"да\"\n    }\n    free = \"да\"\n    if player.collides_at_location(shift_coordinate(value.location, 5, type: y)) {\n        free = \"нет\"\n    }\n    set_block(rock, block(air))\n    send_message(\"ph15 центр=${round(middle, 1)} упрётся=${stuck} свободно=${free}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@ph15c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_name([\"ph15_model\", \"ph15_hit\"])\n    @current entity.remove()\n    wait(2)\n    entity_by_name([\"ph15_model\", \"ph15_hit\"])\n    @default send_message(\"ph15 убрано размер=${value.selection_size}\")\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 300
+   },
+   {
+    "say": "@ph15"
+   },
+   {
+    "expect": "ph15 хитбокс=-?2(\\.0+)? -?1(\\.0+)? игрок=1\\.8 0\\.6"
+   },
+   {
+    "expect": "ph15 центр=0\\.9 упрётся=да свободно=да"
+   },
+   {
+    "wait": 300
+   },
+   {
+    "use": true
+   },
+   {
+    "expect": "ph15 клик по ph15_hit"
+   },
+   {
+    "say": "@ph15c"
+   },
+   {
+    "expect": "ph15 убрано размер=0"
+   }
+  ]
+ }
+]

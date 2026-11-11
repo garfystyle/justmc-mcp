@@ -1,0 +1,7 @@
+{
+  "name": "use-held",
+  "kind": "js",
+  "description": "Использует предмет из слота напрямую через gameMode, без фокуса окна: args.slot, args.yaw, args.pitch, args.after (мс)",
+  "params": [],
+  "updated": "2026-11-07T19:23:46.991Z"
+}

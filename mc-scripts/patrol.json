@@ -1,0 +1,7 @@
+{
+  "name": "patrol",
+  "kind": "js",
+  "description": "Обойти точки по кругу: args.points [[x,y,z],…], args.rounds, args.sprint",
+  "params": [],
+  "updated": "2026-11-05T05:56:22.065Z"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "turntable",
+  "kind": "js",
+  "description": "Снимки модели по кругу с описанием всех визуализаторов рядом: args.x,y,z, args.radius, args.views",
+  "params": [],
+  "updated": "2026-11-05T05:56:22.071Z"
+}

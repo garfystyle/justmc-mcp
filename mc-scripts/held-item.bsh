@@ -1,0 +1,6 @@
+Object s = mc.player.getMainHandItem();
+p(s.getItem().toString());
+p(s.getHoverName().getString());
+Object it = s.getComponents().iterator();
+while (it.hasNext()) p(it.next());
+"готово";

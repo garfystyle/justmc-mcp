@@ -1,0 +1,610 @@
+[
+ {
+  "name": "спавн: здоровье, снаряжение, атрибуты, тип, место по умолчанию",
+  "code": "const MOB = \"mb01_mob\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb01\") {\n        end_thread()\n    }\n    cancel_event()\n    at = shift_coordinate(value.location, 3, type: x)\n    spawn_mob(\n        mob: item(husk_spawn_egg), location: at, health: 50, custom_name: MOB,\n        main_hand: item(iron_sword), helmet: item(iron_helmet),\n    )\n    @last set_ai(ai: false)\n    kind = @last value.entity_type\n    hp = @last value.current_health\n    top = @last value.max_health\n    send_message(\"mb01 тип=${kind} hp=${hp} max=${top}\")\n    @last entity.set_max_health(300, heal_to_max: true)\n    @last entity.set_attribute(2, attribute_type: generic_scale)\n    wait(2)\n    hp = @last value.current_health\n    top = @last value.max_health\n    tall = @last value.entity_height\n    send_message(\"mb01 после hp=${hp} max=${top} рост=${round(tall)}\")\n    @last entity.remove()\n    spawn_mob(mob: item(husk_spawn_egg), location: at, health: 5000, custom_name: MOB)\n    @last set_ai(ai: false)\n    hp = @last value.current_health\n    top = @last value.max_health\n    send_message(\"mb01 предел hp=${hp} max=${top}\")\n    @last entity.remove()\n    spawn_mob(mob: item(husk_spawn_egg), custom_name: MOB)\n    @last set_ai(ai: false)\n    wait(2)\n    gap = locations_distance(value.location, @last value.location)\n    send_message(\"mb01 без места дальше=${round(gap)}\")\n    @last entity.remove()\n}\n",
+  "steps": [
+   {
+    "say": "@mb01"
+   },
+   {
+    "expect": "mb01 тип=husk hp=50(\\.0)? max=50(\\.0)?"
+   },
+   {
+    "expect": "mb01 после hp=300(\\.0)? max=300(\\.0)? рост=4"
+   },
+   {
+    "expect": "mb01 предел hp=\\S+ max=\\S+"
+   },
+   {
+    "expect": "mb01 без места дальше=\\d+"
+   },
+   {
+    "wait": 400
+   },
+   {
+    "entity": {
+     "name": "mb01",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ },
+ {
+  "name": "поиск своих: цветное имя, моб и визуализатор, UUID, тег; состояние в теге",
+  "code": "const NAME = \"&cmb02 моб\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb02\") {\n        end_thread()\n    }\n    cancel_event()\n    at = shift_coordinate(value.location, 3, type: x)\n    spawn_mob(mob: item(husk_spawn_egg), location: at, custom_name: NAME)\n    @last set_ai(ai: false)\n    @last set_custom_tag(\"mb02\", \"a\")\n    id = @last value.uuid\n    spawn_text_display(at, NAME, \"mb02 подпись\")\n    wait(2)\n    entity_by_name(NAME)\n    a = value.selection_size\n    mob_by_name(NAME)\n    b = value.selection_size\n    shown = @current value.name\n    entity_by_name(\"mb02 моб\")\n    c = value.selection_size\n    entity_by_name(id)\n    d = value.selection_size\n    entity_by_conditional(has_custom_tag(\"mb02\", \"a\"))\n    e = value.selection_size\n    entity_by_conditional(has_custom_tag(\"mb02\"))\n    f = value.selection_size\n    entity_by_conditional(entity.name_equals(NAME))\n    g = value.selection_size\n    entity_by_name(\"mb02_нет\")\n    h = \"нет\"\n    if entity.exists() {\n        h = \"да\"\n    }\n    @default send_message(\"mb02 имя=${a} моб=${b} голое=${c} uuid=${d} тег=${e} ключ=${f} условие=${g} пусто=${h} показ=${shown}\")\n    entity_by_name(id)\n    @current set_custom_tag(\"mb02_hits\", 1)\n    n = @current get_custom_tag(\"mb02_hits\", 0)\n    @current set_custom_tag(\"mb02_hits\", n + 1)\n    m = @current get_custom_tag(\"mb02_hits\", 0)\n    none = @current get_custom_tag(\"mb02_missing\", \"пусто\")\n    @current remove_custom_tag(\"mb02_hits\")\n    gone = \"да\"\n    if @current has_custom_tag(\"mb02_hits\") {\n        gone = \"нет\"\n    }\n    @default send_message(\"mb02 счёт=${m} умолчание=${none} снят=${gone}\")\n    entity_by_name(NAME)\n    @current entity.remove()\n}\n",
+  "steps": [
+   {
+    "say": "@mb02"
+   },
+   {
+    "expect": "mb02 имя=2 моб=1 голое=[012] uuid=1 тег=1 ключ=1 условие=[012] пусто=нет показ=.+"
+   },
+   {
+    "expect": "mb02 счёт=2(\\.0)? умолчание=пусто снят=да"
+   },
+   {
+    "wait": 400
+   },
+   {
+    "entity": {
+     "name": "mb02",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ },
+ {
+  "name": "патруль: маршрут, индекс, доступный путь, настройка поиска пути, стоп",
+  "code": "const MOB = \"mb03_mob\"\n\nfunc mb03_walk(mob_id: text, point: location) {\n    entity_by_name(mob_id)\n    @current move_to_location(point, 1)\n    repeat 40 {\n        wait(10)\n        entity_by_name(mob_id)\n        if value.selection_size == 0 {\n            return \"пропал\"\n        }\n        if @current is_near_location(1.5, point) {\n            return \"дошёл\"\n        }\n    }\n    return \"застрял\"\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb03\") {\n        end_thread()\n    }\n    cancel_event()\n    a = shift_coordinate(value.location, 3, type: x)\n    b = shift_coordinate(a, 6, type: z)\n    spawn_mob(mob: item(pig_spawn_egg), location: b, custom_name: MOB)\n    @last set_pathfinder_settings(can_float: true, can_open_door: false, can_pass_door: false)\n    id = @last value.uuid\n    idle = \"нет\"\n    if @last has_available_path() {\n        idle = \"да\"\n    }\n    @last move_to_location(a, 1)\n    wait(10)\n    path = \"нет\"\n    if @last has_available_path() {\n        path = \"да\"\n    }\n    points = @last value.entity_pathfinder_points\n    index = @last value.entity_pathfinder_point_index\n    send_message(\"mb03 без цели=${idle} путь=${path} точек=${len(points)} индекс=${index}\")\n    first = mb03_walk(id, a)\n    @default send_message(\"mb03 к первой=${first}\")\n    second = mb03_walk(id, b)\n    @default send_message(\"mb03 ко второй=${second}\")\n    entity_by_name(id)\n    @current move_to_location(shift_coordinate(a, 40, type: y), 1)\n    wait(10)\n    sky = \"нет\"\n    if @current has_available_path() {\n        sky = \"да\"\n    }\n    @current move_to_location_stop()\n    @default send_message(\"mb03 в небо=${sky}\")\n    @current entity.remove()\n}\n",
+  "steps": [
+   {
+    "say": "@mb03"
+   },
+   {
+    "expect": "mb03 без цели=(да|нет) путь=да точек=[1-9]\\d* индекс=\\d+",
+    "timeout": 5000
+   },
+   {
+    "expect": "mb03 к первой=дошёл",
+    "timeout": 25000
+   },
+   {
+    "expect": "mb03 ко второй=дошёл",
+    "timeout": 25000
+   },
+   {
+    "expect": "mb03 в небо=(да|нет)",
+    "timeout": 5000
+   },
+   {
+    "wait": 400
+   },
+   {
+    "entity": {
+     "name": "mb03",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ },
+ {
+  "name": "set_ai против set_aware: гравитация и приказ идти",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@mb04\") {\n        end_thread()\n    }\n    cancel_event()\n    base = shift_coordinate(value.location, 3, type: x)\n    up = shift_coordinate(base, 3, type: y)\n    y0 = get_coordinate(base, type: y)\n    spawn_mob(mob: item(pig_spawn_egg), location: up, custom_name: \"mb04_ai\")\n    @last set_ai(ai: false)\n    a = @last value.uuid\n    spawn_mob(mob: item(pig_spawn_egg), location: shift_coordinate(up, 2, type: z), custom_name: \"mb04_aware\")\n    @last set_aware(aware: false)\n    b = @last value.uuid\n    wait(2s)\n    entity_by_name(a)\n    pa = @current value.location\n    ya = get_coordinate(pa, type: y)\n    entity_by_name(b)\n    pb = @current value.location\n    yb = get_coordinate(pb, type: y)\n    goal = shift_coordinate(base, 6, type: x)\n    entity_by_name([a, b])\n    @current move_to_location(goal, 1)\n    wait(2s)\n    entity_by_name(a)\n    da = locations_distance(pa, @current value.location)\n    entity_by_name(b)\n    db = locations_distance(pb, @current value.location)\n    entity_by_name([a, b])\n    @current entity.remove()\n    @default send_message(\"mb04 ai=${round(ya - y0)} aware=${round(yb - y0)} сдвиг=${round(da)} ${round(db)}\")\n}\n",
+  "steps": [
+   {
+    "say": "@mb04"
+   },
+   {
+    "expect": "mb04 ai=[0-3] aware=0 сдвиг=0 0",
+    "timeout": 8000
+   },
+   {
+    "wait": 400
+   },
+   {
+    "entity": {
+     "name": "mb04",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ },
+ {
+  "name": "цель моба: set_target, value.targeted_entity, укус, сброс",
+  "code": "const MOB = \"mb05_mob\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb05\") {\n        end_thread()\n    }\n    cancel_event()\n    set_gamemode(gamemode: survival)\n    set_health(20)\n    at = shift_coordinate(value.location, 4, type: x)\n    spawn_mob(mob: item(husk_spawn_egg), location: at, custom_name: MOB)\n    @last entity.set_attribute(1, attribute_type: generic_attack_damage)\n    @last set_target(value.uuid)\n    wait(2)\n    got = @last value.targeted_entity\n    same = \"нет\"\n    if got == value.uuid {\n        same = \"да\"\n    }\n    send_message(\"mb05 цель=${same}\")\n}\n\nwhen entity_damage_player {\n    if not @damager entity.name_equals(MOB) {\n        end_thread()\n    }\n    bare = \"нет\"\n    if entity.name_equals(MOB) {\n        bare = \"да\"\n    }\n    @damager set_target()\n    got = @damager value.targeted_entity\n    clear = \"да\"\n    if got == value.uuid {\n        clear = \"нет\"\n    }\n    send_message(\"mb05 укус без цели=${bare} сброс=${clear}\")\n    @damager entity.remove()\n    set_gamemode(gamemode: adventure)\n}\n",
+  "steps": [
+   {
+    "say": "@mb05"
+   },
+   {
+    "expect": "mb05 цель=да"
+   },
+   {
+    "expect": "mb05 укус без цели=(да|нет) сброс=да",
+    "timeout": 15000
+   },
+   {
+    "wait": 400
+   },
+   {
+    "entity": {
+     "name": "mb05",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ },
+ {
+  "name": "поток моба на entity_spawn: когда виден тег, пустая выборка, выход после смерти",
+  "code": "const MOB = \"mb06_mob\"\n\nwhen entity_spawn {\n    if not entity.name_equals(MOB) {\n        end_thread()\n    }\n    early = \"нет\"\n    if has_custom_tag(\"mb06\", \"ai\") {\n        early = \"да\"\n    }\n    reason = \"нет\"\n    if spawn_reason_equals(reason: custom) {\n        reason = \"да\"\n    }\n    wait(1)\n    late = \"нет\"\n    if has_custom_tag(\"mb06\", \"ai\") {\n        late = \"да\"\n    }\n    entity_by_name(\"mb06_нет\")\n    empty = \"нет\"\n    if entity.exists() {\n        empty = \"да\"\n    }\n    reset()\n    kind = value.entity_type\n    @all send_message(\"mb06 сразу=${early} тик=${late} пустая=${empty} тип=${kind} причина=${reason}\")\n    laps = 0\n    while @default entity.exists() {\n        all_players()\n        laps += 1\n        wait(5)\n    }\n    @all send_message(\"mb06 поток вышел кругов=${laps}\")\n}\n\nwhen entity_spawn {\n    if not entity.name_equals(MOB) {\n        end_thread()\n    }\n    repeat 30 {\n        if not entity.exists() {\n            @all send_message(\"mb06 условие без цели: вышел\")\n            end_thread()\n        }\n        all_players()\n        wait(5)\n    }\n    @all send_message(\"mb06 условие без цели: не вышел\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb06\") {\n        end_thread()\n    }\n    cancel_event()\n    at = shift_coordinate(value.location, 3, type: x)\n    spawn_mob(mob: item(husk_spawn_egg), location: at, custom_name: MOB)\n    @last set_ai(ai: false)\n    @last set_custom_tag(\"mb06\", \"ai\")\n    @last entity.set_death_drops(drops: false)\n    wait(1s)\n    @last entity.damage(9999)\n}\n",
+  "steps": [
+   {
+    "say": "@mb06"
+   },
+   {
+    "expect": "mb06 сразу=(да|нет) тик=да пустая=(да|нет) тип=husk причина=(да|нет)"
+   },
+   {
+    "expect": "mb06 условие без цели: (не )?вышел",
+    "timeout": 10000
+   },
+   {
+    "expect": "mb06 поток вышел кругов=[1-9]",
+    "timeout": 8000
+   }
+  ]
+ },
+ {
+  "name": "НПС: реплики по клику, ответ меню, send_dialogue",
+  "code": "const TAG = \"mb07\"\n\ngame `mb07_step %player%`\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb07\") {\n        end_thread()\n    }\n    cancel_event()\n    `mb07_step %player%` = 0\n    front = shift_location_on_vector(value.eye_location, value.direction_of_view, 2.5)\n    front = shift_coordinate(front, -1, type: y)\n    spawn_mob(mob: item(villager_spawn_egg), location: front, custom_name: \"mb07_npc\")\n    @last set_ai(ai: false)\n    @last set_invulnerable(invulnerable: true)\n    @last set_silenced(silenced: true)\n    @last set_custom_tag(TAG, \"elder\")\n    @last disguise_as_player(\"Notch\", \"&eСтарик\", server_type: mojang)\n    send_message(\"mb07 готово\")\n}\n\nwhen player_right_click_entity {\n    if not @victim has_custom_tag(TAG, \"elder\") {\n        end_thread()\n    }\n    cancel_event()\n    @victim entity.face_location(value.eye_location)\n    send_message(\"mb07 кликнут entity=%entity% victim=%victim%\")\n    i = `mb07_step %player%`\n    talk = [\"mb07 реплика раз\", \"mb07 реплика два\"]\n    if i < len(talk) {\n        send_message(talk[i])\n        `mb07_step %player%` += 1\n        send_message(\"mb07 шаг=${`mb07_step %player%`}\")\n        end_thread()\n    }\n    `mb07_step %player%` = 0\n    show_inventory_menu(\n        [item(lime_dye, name: \"Да\", tags: {btn: \"yes\"}), _, _, _, item(barrier, name: \"Нет\", tags: {btn: \"no\"})],\n        \"mb07 Ответ\", \"mb07\", inventory_type: hopper,\n    )\n}\n\nwhen player_click_inventory {\n    if value.open_inventory_custom_id != \"mb07\" {\n        end_thread()\n    }\n    cancel_event()\n    if item_has_tag(value.event_item, \"btn\", \"yes\") {\n        close_inventory()\n        send_dialogue([\"mb07 первый ответ\", \"mb07 второй ответ\"], 10)\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb07c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(TAG, \"elder\"))\n    @current entity.remove()\n    @default send_message(\"mb07 убрано\")\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 200
+   },
+   {
+    "say": "@mb07"
+   },
+   {
+    "expect": "mb07 готово"
+   },
+   {
+    "wait": 800
+   },
+   {
+    "use": true
+   },
+   {
+    "expect": "mb07 кликнут entity=\\S+ victim=mb07_npc"
+   },
+   {
+    "expect": "mb07 реплика раз"
+   },
+   {
+    "expect": "mb07 шаг=1(\\.0)?"
+   },
+   {
+    "wait": 500
+   },
+   {
+    "use": true
+   },
+   {
+    "expect": "mb07 реплика два"
+   },
+   {
+    "expect": "mb07 шаг=2(\\.0)?"
+   },
+   {
+    "wait": 500
+   },
+   {
+    "use": true
+   },
+   {
+    "gui": "mb07 Ответ"
+   },
+   {
+    "click": 0
+   },
+   {
+    "expect": "mb07 первый ответ"
+   },
+   {
+    "expect": "mb07 второй ответ",
+    "timeout": 12000
+   },
+   {
+    "say": "@mb07c"
+   },
+   {
+    "expect": "mb07 убрано"
+   }
+  ]
+ },
+ {
+  "name": "торговец: товары, окно обмена",
+  "code": "const TAG = \"mb08\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb08\") {\n        end_thread()\n    }\n    cancel_event()\n    front = shift_location_on_vector(value.eye_location, value.direction_of_view, 2.5)\n    front = shift_coordinate(front, -1, type: y)\n    spawn_mob(mob: item(wandering_trader_spawn_egg), location: front, custom_name: \"mb08_npc\")\n    @last set_ai(ai: false)\n    @last set_invulnerable(invulnerable: true)\n    @last set_custom_tag(TAG, \"trader\")\n    @last clear_merchant_recipes()\n    @last set_merchant_recipe(item(diamond), item(dirt), max_uses: 9999, mode: append)\n    @last set_merchant_recipe(item(emerald), item(dirt, 2), item(stone), max_uses: 9999, mode: append)\n    send_message(\"mb08 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb08c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(TAG, \"trader\"))\n    @current entity.remove()\n    @default send_message(\"mb08 убрано\")\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 200
+   },
+   {
+    "say": "@mb08"
+   },
+   {
+    "expect": "mb08 готово"
+   },
+   {
+    "wait": 800
+   },
+   {
+    "use": true
+   },
+   {
+    "wait": 800
+   },
+   {
+    "java": "mc.player.containerMenu.getClass().getSimpleName()",
+    "equals": "MerchantMenu"
+   },
+   {
+    "java": "mc.player.containerMenu.getOffers().size()",
+    "equals": 2
+   },
+   {
+    "close": true
+   },
+   {
+    "say": "@mb08c"
+   },
+   {
+    "expect": "mb08 убрано"
+   }
+  ]
+ },
+ {
+  "name": "босс: полоса по здоровью, фаза, щит пока жива охрана, награда, снятие полосы",
+  "code": "const TAG = \"mb09\"\nconst BAR = \"mb09_bar\"\n\ngame mb09_id\ngame mb09_phase\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb09\") {\n        end_thread()\n    }\n    cancel_event()\n    at = shift_coordinate(value.location, 4, type: x)\n    spawn_mob(mob: item(husk_spawn_egg), location: at, health: 100, custom_name: \"mb09_boss\")\n    @last set_ai(ai: false)\n    @last set_custom_tag(TAG, \"core\")\n    @last entity.set_death_drops(drops: false)\n    mb09_id = @last value.uuid\n    mb09_phase = 1\n    @all set_boss_bar(BAR, \"mb09 Страж 100\", 100, sky_effect: dark_sky, style: notched_10, color: red)\n    send_message(\"mb09 готово\")\n}\n\nwhen entity_take_damage {\n    if not has_custom_tag(TAG, \"core\") {\n        end_thread()\n    }\n    entity_by_conditional(has_custom_tag(TAG, \"guard\"))\n    if value.selection_size > 0 {\n        cancel_event()\n        @all send_message(\"mb09 щит\")\n        end_thread()\n    }\n    wait(1)\n    entity_by_name(mb09_id)\n    if value.selection_size == 0 {\n        end_thread()\n    }\n    hp = @current value.current_health\n    top = @current value.max_health\n    part = 100 * hp / top\n    @all set_boss_bar(BAR, \"mb09 Страж ${round(hp)} фаза ${mb09_phase}\", part, sky_effect: dark_sky, style: notched_10, color: red)\n    if mb09_phase == 1 and part <= 50 {\n        mb09_phase = 2\n        @all send_message(\"mb09 вторая фаза\")\n        spawn_mob(mob: item(husk_spawn_egg), location: @current value.location, custom_name: \"mb09_guard\")\n        @last set_ai(ai: false)\n        @last set_custom_tag(TAG, \"guard\")\n        @last entity.set_death_drops(drops: false)\n    }\n}\n\nwhen entity_death {\n    if not has_custom_tag(TAG, \"core\") {\n        end_thread()\n    }\n    @all remove_boss_bar(BAR)\n    @all send_message(\"mb09 пал\")\n    @killer send_message(\"mb09 награда\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb09h\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_name(mb09_id)\n    @current entity.damage(60, value.name)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb09g\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(TAG, \"guard\"))\n    @current entity.remove()\n    @default send_message(\"mb09 охрана убрана\")\n}\n",
+  "steps": [
+   {
+    "say": "@mb09"
+   },
+   {
+    "expect": "mb09 готово"
+   },
+   {
+    "bossbar": "mb09 Страж 100",
+    "timeout": 3000
+   },
+   {
+    "wait": 300
+   },
+   {
+    "java": "mc.gui.hud.getBossOverlay().shouldDarkenScreen()",
+    "equals": true
+   },
+   {
+    "say": "@mb09h"
+   },
+   {
+    "expect": "mb09 вторая фаза"
+   },
+   {
+    "bossbar": "mb09 Страж 40 фаза 1",
+    "timeout": 3000
+   },
+   {
+    "wait": 700
+   },
+   {
+    "say": "@mb09h"
+   },
+   {
+    "expect": "mb09 щит"
+   },
+   {
+    "say": "@mb09g"
+   },
+   {
+    "expect": "mb09 охрана убрана"
+   },
+   {
+    "wait": 700
+   },
+   {
+    "say": "@mb09h"
+   },
+   {
+    "expect": "mb09 пал"
+   },
+   {
+    "expect": "mb09 награда"
+   },
+   {
+    "wait": 400
+   },
+   {
+    "java": "mc.gui.hud.getBossOverlay().shouldDarkenScreen()",
+    "equals": false
+   },
+   {
+    "entity": {
+     "name": "mb09",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ },
+ {
+  "name": "питомец: идёт за хозяином, догоняет телепортом, уборка по тегу хозяина",
+  "code": "const OWNER = \"mb10_owner\"\n\ngame `mb10_home %player%`\n\nprocess mb10_follow(mob_id: text) {\n    entity_by_name(mob_id)\n    while value.selection_size > 0 {\n        gap = locations_distance(@current value.location, value.location)\n        if gap > 12 {\n            @current entity.teleport(value.location)\n        } else if gap > 3 {\n            @current move_to_location(value.location, 1.3)\n        } else {\n            @current move_to_location_stop()\n        }\n        wait(10)\n        entity_by_name(mob_id)\n    }\n    @default send_message(\"mb10 поток кончился\")\n}\n\nfunc mb10_report(label: text) {\n    entity_by_conditional(has_custom_tag(OWNER, value.name))\n    gap = locations_distance(@current value.location, value.location)\n    near = \"нет\"\n    if gap < 5 {\n        near = \"да\"\n    }\n    @default send_message(\"mb10 ${label} рядом=${near}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb10\") {\n        end_thread()\n    }\n    cancel_event()\n    `mb10_home %player%` = value.location\n    at = shift_coordinate(value.location, 2, type: x)\n    spawn_mob(mob: item(pig_spawn_egg), location: at, custom_name: \"mb10_pet\")\n    @last set_custom_tag(OWNER, value.name)\n    @last set_invulnerable(invulnerable: true)\n    start mb10_follow(@last value.uuid)\n    send_message(\"mb10 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb10a\") {\n        end_thread()\n    }\n    cancel_event()\n    player.teleport(shift_coordinate(value.location, 8, type: x))\n    wait(8s)\n    mb10_report(\"шаг\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb10b\") {\n        end_thread()\n    }\n    cancel_event()\n    player.teleport(shift_coordinate(value.location, -16, type: x))\n    wait(2s)\n    mb10_report(\"прыжок\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb10c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(OWNER, value.name))\n    @current entity.remove()\n    @default player.teleport(`mb10_home %player%`)\n}\n",
+  "steps": [
+   {
+    "say": "@mb10"
+   },
+   {
+    "expect": "mb10 готово"
+   },
+   {
+    "say": "@mb10a"
+   },
+   {
+    "expect": "mb10 шаг рядом=да",
+    "timeout": 12000
+   },
+   {
+    "say": "@mb10b"
+   },
+   {
+    "expect": "mb10 прыжок рядом=да",
+    "timeout": 6000
+   },
+   {
+    "say": "@mb10c"
+   },
+   {
+    "expect": "mb10 поток кончился",
+    "timeout": 3000
+   }
+  ]
+ },
+ {
+  "name": "приручённый волк: set_tame, сам догоняет хозяина",
+  "code": "const MOB = \"mb11_wolf\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb11\") {\n        end_thread()\n    }\n    cancel_event()\n    home = value.location\n    at = shift_coordinate(value.location, -3, type: x)\n    spawn_mob(mob: item(wolf_spawn_egg), location: at, custom_name: MOB)\n    @last set_tame(value.name)\n    @last set_invulnerable(invulnerable: true)\n    wolf = @last value.uuid\n    wait(1s)\n    player.teleport(shift_coordinate(value.location, 13, type: x))\n    wait(4s)\n    entity_by_name(wolf)\n    gap = locations_distance(@current value.location, value.location)\n    near = \"нет\"\n    if gap < 6 {\n        near = \"да\"\n    }\n    @current entity.remove()\n    @default player.teleport(home)\n    @default send_message(\"mb11 волк рядом=${near}\")\n}\n",
+  "steps": [
+   {
+    "say": "@mb11"
+   },
+   {
+    "expect": "mb11 волк рядом=да",
+    "timeout": 9000
+   },
+   {
+    "wait": 400
+   },
+   {
+    "entity": {
+     "name": "mb11",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ },
+ {
+  "name": "маскировка моба: клиент видит другой тип, снятие возвращает моба",
+  "code": "const MOB = \"mb12_mob\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb12\") {\n        end_thread()\n    }\n    cancel_event()\n    at = shift_coordinate(value.location, 3, type: x)\n    spawn_mob(mob: item(husk_spawn_egg), location: at, custom_name: MOB)\n    @last set_ai(ai: false)\n    @last entity.disguise_as_entity(item(pig_spawn_egg))\n    send_message(\"mb12 свинья\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb12b\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_name(MOB)\n    @current entity.disguise_as_block(block(stone))\n    wait(5)\n    on = \"нет\"\n    if @current entity.is_disguised() {\n        on = \"да\"\n    }\n    @default send_message(\"mb12 блок замаскирован=${on} найден=${value.selection_size}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb12c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_name(MOB)\n    @current entity.remove_disguise()\n    wait(5)\n    on = \"нет\"\n    if @current entity.is_disguised() {\n        on = \"да\"\n    }\n    @default send_message(\"mb12 снято замаскирован=${on}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb12d\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_name(MOB)\n    @current entity.remove()\n    @default send_message(\"mb12 убрано\")\n}\n",
+  "steps": [
+   {
+    "say": "@mb12"
+   },
+   {
+    "expect": "mb12 свинья"
+   },
+   {
+    "wait": 500
+   },
+   {
+    "entity": {
+     "type": "pig",
+     "count": 1,
+     "radius": 16
+    }
+   },
+   {
+    "say": "@mb12b"
+   },
+   {
+    "expect": "mb12 блок замаскирован=да найден=1"
+   },
+   {
+    "wait": 300
+   },
+   {
+    "entity": {
+     "type": "pig",
+     "count": 0,
+     "radius": 16
+    }
+   },
+   {
+    "say": "@mb12c"
+   },
+   {
+    "expect": "mb12 снято замаскирован=нет"
+   },
+   {
+    "wait": 500
+   },
+   {
+    "entity": {
+     "type": "husk",
+     "count": 1,
+     "radius": 16
+    }
+   },
+   {
+    "say": "@mb12d"
+   },
+   {
+    "expect": "mb12 убрано"
+   }
+  ]
+ },
+ {
+  "name": "волны: счёт по тегу, полоса, следующая волна, конец",
+  "code": "const TAG = \"mb13\"\n\ngame mb13_wave\n\nfunc mb13_spawn(count: number, at: location) {\n    repeat count {\n        spawn_mob(mob: item(husk_spawn_egg), location: at, custom_name: \"mb13_mob\")\n        @last set_ai(ai: false)\n        @last set_custom_tag(TAG, \"mob\")\n        @last entity.set_death_drops(drops: false)\n        wait(2)\n    }\n}\n\nprocess mb13_run(at: location) {\n    mb13_wave = 0\n    forever {\n        entity_by_conditional(has_custom_tag(TAG, \"mob\"))\n        left = value.selection_size\n        if left == 0 {\n            if mb13_wave == 2 {\n                @all remove_boss_bar(\"mb13\")\n                @all send_message(\"mb13 победа\")\n                return\n            }\n            mb13_wave += 1\n            mb13_spawn(mb13_wave + 1, at)\n            entity_by_conditional(has_custom_tag(TAG, \"mob\"))\n            left = value.selection_size\n            @all send_message(\"mb13 волна ${mb13_wave} мобов=${left}\")\n        }\n        @all set_boss_bar(\"mb13\", \"mb13 Волна ${mb13_wave} осталось ${left}\", 100, color: red)\n        wait(10)\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb13\") {\n        end_thread()\n    }\n    cancel_event()\n    start mb13_run(shift_coordinate(value.location, 4, type: x), target_mode: no_target)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb13k\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(TAG, \"mob\"))\n    @current entity.damage(9999)\n}\n",
+  "steps": [
+   {
+    "say": "@mb13"
+   },
+   {
+    "expect": "mb13 волна 1(\\.0)? мобов=2",
+    "timeout": 5000
+   },
+   {
+    "bossbar": "mb13 Волна 1(\\.0)? осталось 2",
+    "timeout": 3000
+   },
+   {
+    "say": "@mb13k"
+   },
+   {
+    "expect": "mb13 волна 2(\\.0)? мобов=3",
+    "timeout": 8000
+   },
+   {
+    "say": "@mb13k"
+   },
+   {
+    "expect": "mb13 победа",
+    "timeout": 8000
+   },
+   {
+    "wait": 1500
+   },
+   {
+    "entity": {
+     "name": "mb13",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ },
+ {
+  "name": "свой дроп: entity_death, обычная добыча выключена, @killer, поиск предмета",
+  "code": "const TAG = \"mb14\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb14\") {\n        end_thread()\n    }\n    cancel_event()\n    set_gamemode(gamemode: survival)\n    front = shift_location_on_vector(value.eye_location, value.direction_of_view, 2.5)\n    front = shift_coordinate(front, -1, type: y)\n    spawn_mob(mob: item(husk_spawn_egg), location: front, health: 0.5, custom_name: \"mb14_mob\")\n    @last set_ai(ai: false)\n    @last set_custom_tag(TAG, \"loot\")\n    @last entity.set_death_drops(drops: false)\n    send_message(\"mb14 готово\")\n}\n\nwhen entity_death {\n    if not has_custom_tag(TAG, \"loot\") {\n        end_thread()\n    }\n    spawn_item(value.location, item(emerald, 3), \"mb14_loot\", can_player_pickup: false)\n    @killer give_items(item(gold_ingot))\n    @killer send_message(\"mb14 убийца получил\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb14c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_name(\"mb14_loot\")\n    n = value.selection_size\n    @current entity.remove()\n    @default remove_items(item(gold_ingot))\n    @default set_gamemode(gamemode: adventure)\n    @default send_message(\"mb14 убрано предметов=${n}\")\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 0
+    }
+   },
+   {
+    "wait": 200
+   },
+   {
+    "say": "@mb14"
+   },
+   {
+    "expect": "mb14 готово"
+   },
+   {
+    "wait": 900
+   },
+   {
+    "attack": 1
+   },
+   {
+    "expect": "mb14 убийца получил"
+   },
+   {
+    "item": "gold_ingot",
+    "count": 1
+   },
+   {
+    "wait": 500
+   },
+   {
+    "entity": {
+     "type": "item",
+     "count": 1,
+     "radius": 8
+    }
+   },
+   {
+    "say": "@mb14c"
+   },
+   {
+    "expect": "mb14 убрано предметов=1"
+   }
+  ]
+ },
+ {
+  "name": "уборка: дети по тегу родителя, удаление и смерть, что входит в all_mobs и all_entities",
+  "code": "const MOB = \"mb15_mob\"\nconst ALL = [\"mb15_mob\", \"mb15_label\", \"mb15_stand\"]\n\nwhen entity_removed_from_world {\n    if not has_custom_tag(\"mb15\", \"parent\") {\n        end_thread()\n    }\n    entity_by_conditional(has_custom_tag(\"mb15_dep\", @default_entity value.uuid))\n    n = value.selection_size\n    @current entity.remove()\n    @all send_message(\"mb15 удаление детей=${n}\")\n}\n\nwhen entity_death {\n    if has_custom_tag(\"mb15\", \"parent\") {\n        @all send_message(\"mb15 смерть\")\n    }\n}\n\nfunc mb15_make(at: location) {\n    spawn_mob(mob: item(husk_spawn_egg), location: at, custom_name: MOB)\n    @last set_ai(ai: false)\n    @last set_custom_tag(\"mb15\", \"parent\")\n    @last entity.set_death_drops(drops: false)\n    parent = @last value.uuid\n    spawn_text_display(at, \"mb15_label\", \"mb15 подпись\")\n    @last set_custom_tag(\"mb15_dep\", parent)\n    @last entity.ride_entity(parent)\n    spawn_armor_stand(location: at, custom_name: \"mb15_stand\", gravity: false, show_arms: false, invisible: true)\n    @last set_custom_tag(\"mb15_dep\", parent)\n    wait(2)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb15\") {\n        end_thread()\n    }\n    cancel_event()\n    mb15_make(shift_coordinate(value.location, 3, type: x))\n    all_mobs()\n    filter_by_conditional(entity.name_equals(ALL))\n    a = value.selection_size\n    all_entities()\n    filter_by_conditional(entity.name_equals(ALL))\n    b = value.selection_size\n    all_entities()\n    filter_by_conditional(entity.name_equals(value.name))\n    c = value.selection_size\n    @default send_message(\"mb15 мобы=${a} все=${b} игрок=${c}\")\n    entity_by_name(MOB)\n    @current entity.remove()\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@mb15b\") {\n        end_thread()\n    }\n    cancel_event()\n    mb15_make(shift_coordinate(value.location, 3, type: x))\n    entity_by_name(MOB)\n    @current entity.damage(9999)\n}\n",
+  "steps": [
+   {
+    "say": "@mb15"
+   },
+   {
+    "expect": "mb15 мобы=[12] все=3 игрок=[01]"
+   },
+   {
+    "expect": "mb15 удаление детей=2",
+    "timeout": 4000
+   },
+   {
+    "wait": 400
+   },
+   {
+    "entity": {
+     "name": "mb15",
+     "count": 0,
+     "radius": 32
+    }
+   },
+   {
+    "say": "@mb15b"
+   },
+   {
+    "expect": "mb15 смерть",
+    "timeout": 4000
+   },
+   {
+    "expect": "mb15 удаление детей=2",
+    "timeout": 6000
+   },
+   {
+    "wait": 400
+   },
+   {
+    "entity": {
+     "name": "mb15",
+     "count": 0,
+     "radius": 32
+    }
+   }
+  ]
+ }
+]

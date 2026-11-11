@@ -1,0 +1,412 @@
+[
+ {
+  "name": "dp01 текст настраивается через @last, поля как в руководстве",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp01\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_text_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp01\", \"&aПривет\")\n    @last set_custom_tag(\"mod\", \"dp01\")\n    @last set_display_billboard(billboard_type: vertical)\n    @last set_text_display_background(\"#000000\", 0)\n    @last set_text_display_text_shadow()\n    @last set_display_scale(vec(2, 2, 2))\n    @default send_message(\"dp01 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp01c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp01\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp01 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp01"
+   },
+   {
+    "expect": "dp01 готово"
+   },
+   {
+    "display": {
+     "type": "text_display",
+     "name": "dp01",
+     "text": "Привет",
+     "billboard": "vertical",
+     "background": "#00000000",
+     "shadow": true,
+     "scale": [
+      2,
+      2,
+      2
+     ],
+     "lineWidth": 200,
+     "count": 1
+    }
+   },
+   {
+    "say": "@dp01c"
+   },
+   {
+    "expect": "dp01 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp02 прозрачность: 98 это максимум, 100 переполняется и прячет текст",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp02\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_text_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp02a\", \"a\")\n    @last set_custom_tag(\"mod\", \"dp02\")\n    @last set_text_display_opacity(98)\n    spawn_text_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp02b\", \"b\")\n    @last set_custom_tag(\"mod\", \"dp02\")\n    @last set_text_display_opacity(100)\n    spawn_text_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp02c\", \"c\")\n    @last set_custom_tag(\"mod\", \"dp02\")\n    @last set_text_display_opacity(50)\n    @default send_message(\"dp02 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp02c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp02\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp02 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp02"
+   },
+   {
+    "expect": "dp02 готово"
+   },
+   {
+    "display": {
+     "name": "dp02a",
+     "textOpacity": 253,
+     "count": 1
+    }
+   },
+   {
+    "display": {
+     "name": "dp02b",
+     "textOpacity": 3,
+     "count": 1
+    }
+   },
+   {
+    "display": {
+     "name": "dp02c",
+     "textOpacity": 131,
+     "count": 1
+    }
+   },
+   {
+    "say": "@dp02c"
+   },
+   {
+    "expect": "dp02 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp03 интерполяция: плавно только с вызовом перед изменением",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp03\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_block_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp03\", block(stone))\n    @last set_custom_tag(\"mod\", \"dp03\")\n    last_entity()\n    wait(1)\n    @current set_display_interpolation(20, 0)\n    @current set_display_scale(vec(3, 3, 3))\n    wait(30)\n    @default send_message(\"dp03 готово\")\n    reset()\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp03c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp03\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp03 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp03"
+   },
+   {
+    "wait": 400
+   },
+   {
+    "java": "Object e = null; Object it = mc.level.entitiesForRendering().iterator(); while (it.hasNext()) { Object x = it.next(); if (x.getName().getString().equals(\"dp03\")) e = x; } float p = e.calculateInterpolationProgress(0f); return p > 0.05f && p < 0.95f;",
+    "equals": true
+   },
+   {
+    "expect": "dp03 готово",
+    "timeout": 4000
+   },
+   {
+    "display": {
+     "name": "dp03",
+     "scale": [
+      3,
+      3,
+      3
+     ],
+     "transformationInterpolationDuration": 20,
+     "count": 1
+    }
+   },
+   {
+    "say": "@dp03c"
+   },
+   {
+    "expect": "dp03 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp04 плавный телепорт: один раз при создании, пауза 1 тик",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp04\") {\n        end_thread()\n    }\n    cancel_event()\n    start_at = shift_all_coordinates(value.location, 0, 2, 3)\n    spawn_block_display(start_at, \"dp04\", block(stone))\n    @last set_custom_tag(\"mod\", \"dp04\")\n    @last set_display_teleport_duration(20)\n    last_entity()\n    wait(1)\n    @current entity.teleport(shift_all_coordinates(start_at, 0, 5, 0))\n    wait(30)\n    @default send_message(\"dp04 готово\")\n    reset()\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp04c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp04\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp04 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp04"
+   },
+   {
+    "event": {
+     "type": "display_move"
+    },
+    "timeout": 3000
+   },
+   {
+    "expect": "dp04 готово",
+    "timeout": 4000
+   },
+   {
+    "display": {
+     "name": "dp04",
+     "posRotInterpolationDuration": 20,
+     "count": 1
+    }
+   },
+   {
+    "say": "@dp04c"
+   },
+   {
+    "expect": "dp04 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp05 порядок Эйлера Rz·Rx·Ry",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp05\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_block_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp05\", block(stone))\n    @last set_custom_tag(\"mod\", \"dp05\")\n    @last set_display_rotation_from_euler_angles(30, 40, 50)\n    @default send_message(\"dp05 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp05c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp05\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp05 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp05"
+   },
+   {
+    "expect": "dp05 готово"
+   },
+   {
+    "display": {
+     "name": "dp05",
+     "leftRotation": [
+      0.197,
+      0.36,
+      0.464,
+      0.785
+     ],
+     "count": 1
+    }
+   },
+   {
+    "say": "@dp05c"
+   },
+   {
+    "expect": "dp05 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp06 add снаружи, add_local внутри",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp06\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_block_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp06a\", block(stone))\n    @last set_custom_tag(\"mod\", \"dp06\")\n    @last set_display_rotation_from_axis_angle(vec(1, 1, 1), 120)\n    @last set_display_rotation_from_euler_angles(0, 0, 30, mode: add)\n    spawn_block_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp06b\", block(stone))\n    @last set_custom_tag(\"mod\", \"dp06\")\n    @last set_display_rotation_from_axis_angle(vec(1, 1, 1), 120)\n    @last set_display_rotation_from_euler_angles(0, 0, 30, mode: add_local)\n    @default send_message(\"dp06 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp06c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp06\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp06 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp06"
+   },
+   {
+    "expect": "dp06 готово"
+   },
+   {
+    "display": {
+     "name": "dp06a",
+     "leftRotation": [
+      0.354,
+      0.612,
+      0.612,
+      0.354
+     ],
+     "count": 1
+    }
+   },
+   {
+    "display": {
+     "name": "dp06b",
+     "leftRotation": [
+      0.612,
+      0.354,
+      0.612,
+      0.354
+     ],
+     "count": 1
+    }
+   },
+   {
+    "say": "@dp06c"
+   },
+   {
+    "expect": "dp06 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp07 матрица рядами, поворот по вектору кладёт +z на направление",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp07\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_block_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp07a\", block(stone))\n    @last set_custom_tag(\"mod\", \"dp07\")\n    @last set_display_correct_transformation_matrix([1, 0, 0, 2, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])\n    spawn_block_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp07b\", block(stone))\n    @last set_custom_tag(\"mod\", \"dp07\")\n    @last set_display_rotation_from_vector(vec(1, 0, 0), vec(0, 1, 0))\n    @default send_message(\"dp07 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp07c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp07\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp07 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp07"
+   },
+   {
+    "expect": "dp07 готово"
+   },
+   {
+    "display": {
+     "name": "dp07a",
+     "translation": [
+      2,
+      0,
+      0
+     ],
+     "count": 1
+    }
+   },
+   {
+    "display": {
+     "name": "dp07b",
+     "leftRotation": [
+      0,
+      0.707,
+      0,
+      0.707
+     ],
+     "count": 1
+    }
+   },
+   {
+    "say": "@dp07c"
+   },
+   {
+    "expect": "dp07 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp08 визуализатор переживает перезапуск мира",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp08\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_text_display(shift_all_coordinates(value.location, 0, 2, 3), \"dp08\", \"x\")\n    @last set_custom_tag(\"mod\", \"dp08\")\n    @default send_message(\"dp08 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp08c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp08\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp08 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp08"
+   },
+   {
+    "expect": "dp08 готово"
+   },
+   {
+    "say": "/build"
+   },
+   {
+    "wait": 3000
+   },
+   {
+    "say": "/play"
+   },
+   {
+    "wait": 3000
+   },
+   {
+    "display": {
+     "name": "dp08",
+     "count": 1
+    }
+   },
+   {
+    "say": "@dp08c"
+   },
+   {
+    "expect": "dp08 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp09 всадник стоит над игроком, телепорт его ссаживает",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp09\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_text_display(value.eye_location, \"dp09\", \"x\")\n    @last set_custom_tag(\"mod\", \"dp09\")\n    @last entity.ride_entity(value.uuid)\n    last_entity()\n    wait(5)\n    @default send_message(\"dp09 сел\")\n    wait(40)\n    @current entity.teleport(shift_all_coordinates(value.location, 3, 2, 3))\n    wait(5)\n    @default send_message(\"dp09 слез\")\n    reset()\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp09c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp09\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp09 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp09"
+   },
+   {
+    "expect": "dp09 сел",
+    "timeout": 3000
+   },
+   {
+    "display": {
+     "name": "dp09",
+     "riding": "player",
+     "count": 1
+    }
+   },
+   {
+    "expect": "dp09 слез",
+    "timeout": 5000
+   },
+   {
+    "java": "Object e = null; Object it = mc.level.entitiesForRendering().iterator(); while (it.hasNext()) { Object x = it.next(); if (x.getName().getString().equals(\"dp09\")) e = x; } return e.isPassenger();",
+    "equals": false
+   },
+   {
+    "say": "@dp09c"
+   },
+   {
+    "expect": "dp09 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp10 голограмма: стойка на строку, та же точка заменяет, пустой текст убирает",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp10\") {\n        end_thread()\n    }\n    cancel_event()\n    spot = shift_all_coordinates(value.location, 0, 2, 3)\n    display_hologram(spot, \"dp10 один\\ndp10 два\")\n    wait(30)\n    display_hologram(spot, \"dp10 новая\")\n    wait(30)\n    display_hologram(spot, \"\")\n    wait(10)\n    @default send_message(\"dp10 готово\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp10c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp10\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp10 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp10"
+   },
+   {
+    "entity": {
+     "type": "armor_stand",
+     "name": "dp10 два",
+     "count": 1
+    },
+    "timeout": 1200
+   },
+   {
+    "entity": {
+     "type": "armor_stand",
+     "name": "dp10 новая",
+     "count": 1
+    },
+    "timeout": 3000
+   },
+   {
+    "expect": "dp10 готово",
+    "timeout": 5000
+   },
+   {
+    "no_entity": {
+     "name": "dp10"
+    }
+   }
+  ]
+ },
+ {
+  "name": "dp11 поиск: имя с цветом, mob_by_name находит, is_mob ложь",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp11\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_text_display(shift_all_coordinates(value.location, 0, 2, 3), \"&cdp11\", \"x\")\n    @last set_custom_tag(\"mod\", \"dp11\")\n    wait(2)\n    mob_by_name(\"&cdp11\")\n    a = value.selection_size\n    reset()\n    entity_by_name(\"dp11\")\n    b = value.selection_size\n    reset()\n    all_mobs()\n    c = value.selection_size\n    reset()\n    @default send_message(\"dp11 a=${a} b=${b} c=${c}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp11c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp11\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp11 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp11"
+   },
+   {
+    "expect": "dp11 a=1(\\.0)? b=0(\\.0)? c=0(\\.0)?"
+   },
+   {
+    "say": "@dp11c"
+   },
+   {
+    "expect": "dp11 убрано="
+   }
+  ]
+ },
+ {
+  "name": "dp12 подпись на игроке снимается смертью",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@dp12\") {\n        end_thread()\n    }\n    cancel_event()\n    spawn_text_display(value.eye_location, \"dp12\", \"x\")\n    @last set_custom_tag(\"mod\", \"dp12\")\n    @last entity.ride_entity(value.uuid)\n    wait(5)\n    player.damage(9999)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@dp12c\") {\n        end_thread()\n    }\n    cancel_event()\n    entity_by_conditional(has_custom_tag(\"mod\", \"dp12\"))\n    n = value.selection_size\n    @current entity.remove()\n    reset()\n    @default send_message(\"dp12 убрано=${n}\")\n}\n",
+  "steps": [
+   {
+    "say": "@dp12"
+   },
+   {
+    "state": {
+     "screen": "DeathScreen"
+    },
+    "timeout": 3000
+   },
+   {
+    "respawn": true
+   },
+   {
+    "wait": 1500
+   },
+   {
+    "java": "Object e = null; Object it = mc.level.entitiesForRendering().iterator(); while (it.hasNext()) { Object x = it.next(); if (x.getName().getString().equals(\"dp12\")) e = x; } return e.isPassenger();",
+    "equals": false
+   },
+   {
+    "say": "@dp12c"
+   },
+   {
+    "expect": "dp12 убрано="
+   }
+  ]
+ }
+]

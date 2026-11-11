@@ -1,0 +1,17 @@
+Object h = mc.hitResult;
+if (h == null) return "ничего";
+String t = h.getType().toString();
+if (t.equals("BLOCK")) {
+  Object at = h.getBlockPos();
+  Object state = mc.level.getBlockState(at);
+  p(at.toString());
+  p(state.toString());
+  Object be = mc.level.getBlockEntity(at);
+  if (be != null) p(be.getClass().getSimpleName());
+} else if (t.equals("ENTITY")) {
+  Object e = h.getEntity();
+  p(e.getType().toString());
+  p(e.getName().getString());
+  p(e.getUUID().toString());
+}
+t;

@@ -1,0 +1,7 @@
+node_modules/
+data/
+agent/build/
+knowledge/reference/DEV.md
+knowledge/reference/LANGUAGE.md
+knowledge/reference/NAMES.md
+knowledge/reference/SERVER.md

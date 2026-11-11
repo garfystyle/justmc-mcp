@@ -1,0 +1,7 @@
+{
+  "name": "wait-ms",
+  "kind": "js",
+  "description": "Просто ждёт заданное время",
+  "params": [],
+  "updated": "2026-11-05T18:20:58.366Z"
+}

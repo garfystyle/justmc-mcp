@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: hologram-leaderboard
+expected_outcome: |
+  Рабочий main.xero: один визуализатор текста, обновляется без пересоздания, не копится после перезапуска.

@@ -1,0 +1,214 @@
+[
+  {
+    "name": "локальные переменные функции общие с вызывающим, строчные нет",
+    "code": "func lo_loop() {\n    for i, n in [1, 2, 3] {\n    }\n}\n\nfunc lo_set() {\n    n = 5\n}\n\nfunc lo_line() {\n    line q = 9\n}\n\nwhen player_chat {\n    if chat_message_equals(\"@lo\") {\n        cancel_event()\n        n = 0\n        lo_loop()\n        send_message(\"lo_after ${n}\")\n        n = 0\n        lo_set()\n        send_message(\"lo_set ${n}\")\n        q = 0\n        lo_line()\n        send_message(\"lo_line ${q}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@lo"
+      },
+      {
+        "expect": "lo_after 3"
+      },
+      {
+        "expect": "lo_set 5"
+      },
+      {
+        "expect": "lo_line 0"
+      }
+    ]
+  },
+  {
+    "name": "остаток от деления в формуле",
+    "code": "when player_chat {\n    if chat_message_equals(\"@mo\") {\n        cancel_event()\n        i = 7\n        x = i % 3\n        send_message(\"mo_rest ${x} ${i % 2}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@mo"
+      },
+      {
+        "expect": "mo_rest 1(\\.0)? 1(\\.0)?$"
+      }
+    ]
+  },
+  {
+    "name": "значения с переменной: create_list и create_map_from_values",
+    "code": "when player_chat {\n    if chat_message_equals(\"@li\") {\n        cancel_event()\n        a = 5\n        l = create_list([a, 2])\n        m = create_map_from_values([\"k\"], [a])\n        send_message(\"li ${l[0]} ${m[\"k\"]}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@li"
+      },
+      {
+        "expect": "li 5(\\.0)? 5(\\.0)?$"
+      }
+    ]
+  },
+  {
+    "name": "world_start срабатывает при настоящем перезапуске и готовит данные",
+    "code": "game ws_ready\n\nwhen world_start {\n    ws_ready = \"да\"\n}\n\nwhen player_join {\n    send_message(\"ws_join ${ws_ready}\")\n}\n",
+    "steps": [
+      {
+        "expect": "ws_join да"
+      }
+    ]
+  },
+  {
+    "name": "в режиме игры игрок в приключении",
+    "code": "when player_join {\n    send_message(\"gm ${value.gamemode}\")\n}\n",
+    "steps": [
+      {
+        "expect": "gm adventure"
+      },
+      {
+        "state": {
+          "gamemode": "ADVENTURE"
+        }
+      }
+    ]
+  },
+  {
+    "name": "убийство моба: кого видно в событии",
+    "code": "when player_chat {\n    if chat_message_equals(\"@kk\") {\n        cancel_event()\n        all_mobs()\n        @current entity.remove()\n        reset()\n        wait(2)\n        set_gamemode(gamemode: survival)\n        front = shift_location_on_vector(value.eye_location, value.direction_of_view, 2.5)\n        front = shift_coordinate(front, -1, type: y)\n        spawn_mob(mob: item(husk_spawn_egg), location: front, health: 0.5, custom_name: \"kk_mob\")\n        @last set_ai(ai: false)\n        @last set_custom_tag(\"kk_tag\", \"1\")\n        send_message(\"kk готов\")\n    }\n}\n\nwhen player_kill_mob {\n    tag = \"нет\"\n    if @victim has_custom_tag(\"kk_tag\", \"1\") {\n        tag = \"да\"\n    }\n    send_message(\"kk убит victim=%victim% entity=%entity% тег=${tag}\")\n}\n",
+    "steps": [
+      {
+        "look": {
+          "yaw": 0,
+          "pitch": 0
+        }
+      },
+      {
+        "wait": 200
+      },
+      {
+        "say": "@kk"
+      },
+      {
+        "expect": "kk готов"
+      },
+      {
+        "wait": 800
+      },
+      {
+        "attack": 1
+      },
+      {
+        "expect": "kk убит victim=kk_mob .*тег=да"
+      }
+    ]
+  },
+  {
+    "name": "список и словарь с переменной внутри",
+    "code": "when player_chat {\n    if chat_message_equals(\"@nl\") {\n        cancel_event()\n        a = 5\n        l = [a, 2]\n        m = {\"k\": a, \"n\": a + 1}\n        send_message(\"nl ${l[0]} ${m[\"k\"]} ${m[\"n\"]}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@nl"
+      },
+      {
+        "expect": "nl 5(\\.0)? 5(\\.0)? 6(\\.0)?$"
+      }
+    ]
+  },
+  {
+    "name": "return заканчивает срабатывание события",
+    "code": "when player_chat {\n    if chat_message_equals(\"@rt\") {\n        cancel_event()\n        send_message(\"rt начало\")\n        if value.name != \"\" {\n            return\n        }\n        send_message(\"rt хвост\")\n    }\n}\nwhen player_chat {\n    if chat_message_equals(\"@rt2\") {\n        cancel_event()\n        send_message(\"rt дальше\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@rt"
+      },
+      {
+        "expect": "rt начало"
+      },
+      {
+        "say": "@rt2"
+      },
+      {
+        "expect": "rt дальше"
+      },
+      {
+        "absent": "rt хвост"
+      }
+    ]
+  },
+  {
+    "name": "цель в подстановке и формуле",
+    "code": "when player_chat {\n    if chat_message_equals(\"@tg\") {\n        cancel_event()\n        x = @current value.food_level + 1\n        send_message(\"tg ${@current value.name} ${x}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@tg"
+      },
+      {
+        "expect": "tg \\S+ \\d+"
+      }
+    ]
+  },
+  {
+    "name": "min и max прямым присваиванием, координаты из переменных",
+    "code": "when player_chat {\n    if chat_message_equals(\"@mm\") {\n        cancel_event()\n        a, b = 3, 7\n        x = min(a, b)\n        l = loc(a, 64, b)\n        y = get_coordinate(l, type: y)\n        send_message(\"mm ${x} ${max(a, b)} ${y}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@mm"
+      },
+      {
+        "expect": "mm 3(\\.0)? 7(\\.0)? 64(\\.0)?$"
+      }
+    ]
+  },
+  {
+    "name": "множественный параметр, описание и имя в кавычках",
+    "code": "func pl_show(title: text \"Заголовок\", lines: text[3] \"Строки\", `Кому написать`: text \"Имя\" = _) {\n    send_message(\"pl ${title} ${len(lines)} ${lines[0]} ${lines[2]} ${`Кому написать`}\")\n}\n\nwhen player_chat {\n    if chat_message_equals(\"@pl\") {\n        cancel_event()\n        pl_show(\"a\", [\"x\", \"y\", \"z\"], `Кому написать`: \"Вася\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@pl"
+      },
+      {
+        "expect": "pl a 3(\\.0)? x z Вася"
+      }
+    ]
+  },
+  {
+    "name": "вид переменной объявлен, ключ в переменной",
+    "code": "save nm_probe: map\n\nwhen player_chat {\n    if chat_message_equals(\"@nm\") {\n        cancel_event()\n        nm_probe = create_map()\n        k = \"a\"\n        nm_probe[k] = 4\n        send_message(\"nm ${nm_probe[k]}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@nm"
+      },
+      {
+        "expect": "nm 4(\\.0)?$"
+      }
+    ]
+  },
+  {
+    "name": "значение меняется на месте без присваивания",
+    "code": "when player_chat {\n    if chat_message_equals(\"@il\") {\n        cancel_event()\n        x = item(stone)\n        set_item_lore(x, \"описание\")\n        l = get_item_lore(x)\n        send_message(\"il ${l[0]}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@il"
+      },
+      {
+        "expect": "il описание"
+      }
+    ]
+  },
+  {
+    "name": "запись через multiple и очистка переменных",
+    "code": "when player_chat {\n    if chat_message_equals(\"@mv\") {\n        cancel_event()\n        x = multiple(5)\n        y = 1\n        y = multiple()\n        z = 7\n        z = var.remove()\n        w = 8\n        var.remove(w)\n        send_message(\"mv ${x} ${y} ${z} ${w}\")\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@mv"
+      },
+      {
+        "expect": "mv 5(\\.0)? 0 0 0$"
+      }
+    ]
+  },
+  {
+    "name": "значения множественного параметра идут клетками",
+    "code": "func cl_show(first: text, rest: text[3], last: text = \"по умолчанию\") {\n    send_message(\"cl ${first} ${len(rest)} ${rest[1]} ${last}\")\n}\n\nwhen player_chat {\n    if chat_message_equals(\"@cl\") {\n        cancel_event()\n        a = \"из переменной\"\n        cl_show(\"один\", [\"x\", a])\n    }\n}\n",
+    "steps": [
+      {
+        "say": "@cl"
+      },
+      {
+        "expect": "cl один 2(\\.0)? из переменной по умолчанию"
+      }
+    ]
+  }
+]

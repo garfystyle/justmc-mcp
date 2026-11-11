@@ -1,0 +1,369 @@
+[
+ {
+  "name": "gn01 шум: диапазоны по умолчанию, zero_to_one, normalized, сид, частота равна умножению координат",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@gn01\") {\n        end_thread()\n    }\n    cancel_event()\n    gn01_lo, gn01_hi = 9, -9\n    gn01_zlo, gn01_zhi = 9, -9\n    gn01_vlo, gn01_vhi = 9, -9\n    gn01_big = 0\n    for gn01_i in 0..299 {\n        gn01_x = gn01_i * 3.7\n        gn01_z = gn01_i * 1.9\n        gn01_p = loc(gn01_x, 64, gn01_z)\n        gn01_n = perlin_noise_3d(gn01_p, 77, 0.05)\n        gn01_lo = min(gn01_lo, gn01_n)\n        gn01_hi = max(gn01_hi, gn01_n)\n        gn01_n = perlin_noise_3d(gn01_p, 77, 0.05, range_mode: zero_to_one)\n        gn01_zlo = min(gn01_zlo, gn01_n)\n        gn01_zhi = max(gn01_zhi, gn01_n)\n        gn01_n = voronoi_noise_3d(gn01_p, 77, 0.05)\n        gn01_vlo = min(gn01_vlo, gn01_n)\n        gn01_vhi = max(gn01_vhi, gn01_n)\n        gn01_n = perlin_noise_3d(gn01_p, 77, 0.05, 4, 2, 1, normalized: false)\n        gn01_big = max(gn01_big, abs(gn01_n))\n        if remainder(gn01_i, 50) == 0 {\n            wait(1)\n        }\n    }\n    send_message(\"gn01 значения перлин ${gn01_lo} ${gn01_hi} от нуля ${gn01_zlo} ${gn01_zhi} вороной ${gn01_vlo} ${gn01_vhi} без нормы ${gn01_big}\")\n    gn01_ok = gn01_lo < 0 and gn01_lo >= -1 and gn01_hi > 0 and gn01_hi <= 1\n    send_message(\"gn01 перлин по умолчанию минус-один-один ${gn01_ok}\")\n    gn01_ok = gn01_zlo >= 0 and gn01_zhi <= 1\n    send_message(\"gn01 zero_to_one ${gn01_ok}\")\n    gn01_ok = gn01_vlo >= 0 and gn01_vhi <= 1\n    send_message(\"gn01 вороной ноль-один ${gn01_ok}\")\n    gn01_ok = gn01_big > 1\n    send_message(\"gn01 без нормы больше единицы ${gn01_ok}\")\n    gn01_q = loc(12.3, 64, 40.7)\n    gn01_a = perlin_noise_3d(gn01_q, 5, 0.05)\n    gn01_b = perlin_noise_3d(gn01_q, 5, 0.05)\n    gn01_c = perlin_noise_3d(gn01_q, 6, 0.05)\n    gn01_ok = gn01_a == gn01_b and gn01_a != gn01_c\n    send_message(\"gn01 сид повторяется и различает ${gn01_ok}\")\n    gn01_a = perlin_noise_3d(loc(103, 41, 207), 5, 0.05)\n    gn01_b = perlin_noise_3d(loc(5.15, 2.05, 10.35), 5, 1)\n    gn01_ok = abs(gn01_a - gn01_b) < 0.001\n    send_message(\"gn01 частота равна умножению ${gn01_ok} ${gn01_a} ${gn01_b}\")\n    gn01_a = perlin_noise_3d(loc(100, 40, 200), 5, 0.02)\n    gn01_b = perlin_noise_3d(loc(101, 40, 200), 5, 0.02)\n    gn01_ok = abs(gn01_a - gn01_b) < 0.1\n    send_message(\"gn01 соседи плавно ${gn01_ok}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn01"
+   },
+   {
+    "expect": "gn01 значения",
+    "timeout": 10000
+   },
+   {
+    "expect": "gn01 перлин по умолчанию минус-один-один 1"
+   },
+   {
+    "expect": "gn01 zero_to_one 1"
+   },
+   {
+    "expect": "gn01 вороной ноль-один 1"
+   },
+   {
+    "expect": "gn01 без нормы больше единицы 1"
+   },
+   {
+    "expect": "gn01 сид повторяется и различает 1"
+   },
+   {
+    "expect": "gn01 частота равна умножению 1"
+   },
+   {
+    "expect": "gn01 соседи плавно 1"
+   }
+  ]
+ },
+ {
+  "name": "gn02 Вороной: случайность по сиду, по месту при частоте 1, ровные ячейки при низкой частоте",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@gn02\") {\n        end_thread()\n    }\n    cancel_event()\n    gn02_seen = create_list()\n    gn02_seed_seen = create_list()\n    gn02_same = 0\n    gn02_rare = 0\n    gn02_prev = -1\n    for gn02_i in 0..99 {\n        gn02_p = loc(gn02_i, 64, 7)\n        gn02_v = voronoi_noise_3d(gn02_p, 11, 1)\n        if not gn02_v in gn02_seen {\n            gn02_seen = append_value(gn02_v)\n        }\n        if gn02_v < 0.1 {\n            gn02_rare += 1\n        }\n        gn02_s = voronoi_noise_3d(loc(3, 64, 7), 1000 + gn02_i, 1)\n        if not gn02_s in gn02_seed_seen {\n            gn02_seed_seen = append_value(gn02_s)\n        }\n        gn02_c = voronoi_noise_3d(gn02_p, 11, 0.02)\n        if gn02_c == gn02_prev {\n            gn02_same += 1\n        }\n        gn02_prev = gn02_c\n    }\n    send_message(\"gn02 значения по месту ${len(gn02_seen)} по сиду ${len(gn02_seed_seen)} редких ${gn02_rare} ячейки ${gn02_same}\")\n    gn02_ok = len(gn02_seed_seen) >= 80\n    send_message(\"gn02 сид даёт случайное ${gn02_ok}\")\n    gn02_ok = len(gn02_seen) >= 40\n    send_message(\"gn02 частота 1 различает блоки ${gn02_ok}\")\n    gn02_ok = gn02_same >= 50\n    send_message(\"gn02 низкая частота даёт ровные ячейки ${gn02_ok}\")\n    gn02_a = voronoi_noise_3d(loc(3, 64, 7), 42, 1)\n    gn02_b = voronoi_noise_3d(loc(3, 64, 7), 42, 1)\n    gn02_ok = gn02_a == gn02_b\n    send_message(\"gn02 повтор ${gn02_ok}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn02"
+   },
+   {
+    "expect": "gn02 значения",
+    "timeout": 10000
+   },
+   {
+    "expect": "gn02 сид даёт случайное 1"
+   },
+   {
+    "expect": "gn02 частота 1 различает блоки 1"
+   },
+   {
+    "expect": "gn02 низкая частота даёт ровные ячейки 1"
+   },
+   {
+    "expect": "gn02 повтор 1"
+   }
+  ]
+ },
+ {
+  "name": "gn03 рельеф: столбцы по шуму, слои, тот же сид даёт те же высоты, луч вниз находит поверхность",
+  "code": "const GN03_SEA = 6\n\nfunc gn03_pace() {\n    gn03_steps += 1\n    if gn03_steps >= 200 {\n        gn03_steps = 0\n        wait(1)\n    }\n    while value.cpu_usage >= 70 {\n        wait(1)\n    }\n}\n\nfunc gn03_height(gn03_col: location, gn03_seed: number) {\n    gn03_n = perlin_noise_3d(gn03_col, gn03_seed, 0.1, 2, 2, 0.5)\n    return clamp(floor(GN03_SEA + gn03_n * 8), 4, 16)\n}\n\nprocess gn03_terrain(gn03_a: location, gn03_b: location, gn03_seed: number) {\n    on_grid(gn03_col, gn03_a, gn03_b) {\n        gn03_h = gn03_height(gn03_col, gn03_seed)\n        gn03_top = shift_coordinate(gn03_col, gn03_h, type: y)\n        set_region(block(stone), gn03_col, gn03_top)\n        set_region(block(dirt), shift_coordinate(gn03_top, -2, type: y), gn03_top)\n        set_block(gn03_top, block(grass_block))\n        if gn03_h < GN03_SEA {\n            set_region(block(light_blue_stained_glass), shift_coordinate(gn03_top, 1, type: y), shift_coordinate(gn03_col, GN03_SEA, type: y))\n        }\n        gn03_pace()\n    }\n    gn03_cols, gn03_grass, gn03_dirt, gn03_stone, gn03_lo, gn03_hi = 0, 0, 0, 0, 99, 0\n    on_grid(gn03_col, gn03_a, gn03_b) {\n        gn03_h = gn03_height(gn03_col, gn03_seed)\n        gn03_top = shift_coordinate(gn03_col, gn03_h, type: y)\n        gn03_cols += 1\n        gn03_lo = min(gn03_lo, gn03_h)\n        gn03_hi = max(gn03_hi, gn03_h)\n        if game.block_equals(block(grass_block), gn03_top) {\n            gn03_grass += 1\n        }\n        if game.block_equals(block(dirt), shift_coordinate(gn03_top, -1, type: y)) {\n            gn03_dirt += 1\n        }\n        if game.block_equals(block(stone), shift_coordinate(gn03_top, -3, type: y)) {\n            gn03_stone += 1\n        }\n        gn03_pace()\n    }\n    send_message(\"gn03 столбцов ${gn03_cols} трава ${gn03_grass} земля ${gn03_dirt} камень ${gn03_stone}\")\n    gn03_ok = gn03_hi - gn03_lo >= 2\n    send_message(\"gn03 перепад ${gn03_ok} высоты ${gn03_lo} ${gn03_hi}\")\n    gn03_h = gn03_height(gn03_b, gn03_seed)\n    gn03_sky = set_location_direction(shift_coordinate(gn03_b, 30, type: y), vec(0, -1, 0))\n    ray_trace_result(variable_for_hit_block_location: gn03_hit, start: gn03_sky, max_distance: 40, ray_size: 0, ray_collision_mode: only_blocks)\n    gn03_want = floor(get_coordinate(gn03_b, type: y) + gn03_h)\n    gn03_got = floor(get_coordinate(gn03_hit, type: y))\n    gn03_ok = gn03_want == gn03_got\n    send_message(\"gn03 луч нашёл поверхность ${gn03_ok} ${gn03_want} ${gn03_got}\")\n    gn03_end = shift_all_coordinates(gn03_b, 0, 18, 0)\n    clear_region(gn03_a, gn03_end)\n    wait(5)\n    gn03_gone = game.block_equals(block(air), shift_coordinate(gn03_a, 2, type: y))\n    send_message(\"gn03 убрано ${gn03_gone}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn03\") {\n        end_thread()\n    }\n    cancel_event()\n    gn03_base = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    start gn03_terrain(gn03_base, shift_all_coordinates(gn03_base, 11, 0, 11), 1234)\n}\n",
+  "steps": [
+   {
+    "say": "@gn03"
+   },
+   {
+    "expect": "gn03 столбцов 144 трава 144 земля 144 камень 144",
+    "timeout": 20000
+   },
+   {
+    "expect": "gn03 перепад 1"
+   },
+   {
+    "expect": "gn03 убрано 1",
+    "timeout": 6000
+   }
+  ]
+ },
+ {
+  "name": "gn04 биомы: индекс из шума, текст из списка как блок, песок без обновления висит",
+  "code": "const GN04_TOPS = [\"sand\", \"grass_block\", \"podzol\", \"snow_block\"]\n\nfunc gn04_biome(gn04_col: location, gn04_seed: number) {\n    gn04_n = perlin_noise_3d(gn04_col, gn04_seed + 500, 0.01, 2, 2, 0.5)\n    return clamp(round(gn04_n * 2.7 + 1.5), 0, 3)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn04\") {\n        end_thread()\n    }\n    cancel_event()\n    gn04_counts = [0, 0, 0, 0]\n    for gn04_i in 0..399 {\n        gn04_x = remainder(gn04_i, 20) * 25\n        gn04_z = floor(gn04_i / 20) * 25\n        gn04_b = gn04_biome(loc(gn04_x, 64, gn04_z), 99)\n        gn04_counts[gn04_b] += 1\n        if remainder(gn04_i, 100) == 0 {\n            wait(1)\n        }\n    }\n    send_message(\"gn04 биомы ${gn04_counts}\")\n    gn04_kinds = 0\n    for gn04_c in gn04_counts {\n        if gn04_c > 0 {\n            gn04_kinds += 1\n        }\n    }\n    gn04_ok = gn04_kinds >= 3\n    send_message(\"gn04 разных биомов не меньше трёх ${gn04_ok}\")\n    gn04_base = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn04_top = get_list_value(GN04_TOPS, 0)\n    set_block(gn04_base, gn04_top)\n    gn04_low = shift_coordinate(gn04_base, -3, type: y)\n    set_block(gn04_low, block(stone))\n    wait(40)\n    gn04_stay = game.block_equals(block(sand), gn04_base)\n    send_message(\"gn04 песок без обновления висит ${gn04_stay}\")\n    set_block(gn04_base, block(air))\n    set_block(gn04_base, block(sand), update_blocks: true)\n    wait(40)\n    gn04_fell = game.block_equals(block(air), gn04_base)\n    send_message(\"gn04 песок с обновлением упал ${gn04_fell}\")\n    clear_region(gn04_base, gn04_low)\n    wait(2)\n    gn04_gone = game.block_equals(block(air), gn04_low)\n    send_message(\"gn04 убрано ${gn04_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn04"
+   },
+   {
+    "expect": "gn04 биомы",
+    "timeout": 10000
+   },
+   {
+    "expect": "gn04 разных биомов не меньше трёх 1"
+   },
+   {
+    "expect": "gn04 песок без обновления висит 1",
+    "timeout": 6000
+   },
+   {
+    "expect": "gn04 песок с обновлением упал 1",
+    "timeout": 6000
+   },
+   {
+    "expect": "gn04 убрано 1"
+   }
+  ]
+ },
+ {
+  "name": "gn05 generate_tree растёт и на стекле, bone_meal_block растит траву",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@gn05\") {\n        end_thread()\n    }\n    cancel_event()\n    gn05_base = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn05_good = shift_coordinate(gn05_base, 8, type: x)\n    gn05_bad = shift_coordinate(gn05_base, -8, type: x)\n    set_block(shift_coordinate(gn05_good, -1, type: y), block(grass_block))\n    set_block(shift_coordinate(gn05_bad, -1, type: y), block(glass))\n    generate_tree(gn05_good, tree_type: birch)\n    generate_tree(gn05_bad, tree_type: birch)\n    wait(5)\n    gn05_grown = game.block_equals(block(birch_log), gn05_good)\n    send_message(\"gn05 на дёрне выросло ${gn05_grown}\")\n    gn05_none = game.block_equals(block(air), gn05_bad)\n    send_message(\"gn05 на стекле пусто ${gn05_none}\")\n    gn05_a = shift_all_coordinates(gn05_base, -14, -2, -9)\n    gn05_b = shift_all_coordinates(gn05_base, 22, 16, 9)\n    clear_region(gn05_a, gn05_b)\n    wait(5)\n    gn05_lawn_a = shift_all_coordinates(gn05_base, -2, -1, -2)\n    gn05_lawn_b = shift_all_coordinates(gn05_base, 2, -1, 2)\n    set_region(block(grass_block), gn05_lawn_a, gn05_lawn_b)\n    bone_meal_block(shift_coordinate(gn05_base, -1, type: y), 5)\n    wait(5)\n    gn05_plants = 0\n    on_grid(gn05_p, gn05_lawn_a, gn05_lawn_b) {\n        if not game.block_equals(block(air), shift_coordinate(gn05_p, 1, type: y)) {\n            gn05_plants += 1\n        }\n    }\n    gn05_ok = gn05_plants >= 1\n    send_message(\"gn05 удобрение вырастило ${gn05_ok} растений ${gn05_plants}\")\n    clear_region(gn05_a, gn05_b)\n    wait(5)\n    gn05_gone = game.block_equals(block(air), shift_coordinate(gn05_base, -1, type: y))\n    send_message(\"gn05 убрано ${gn05_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn05"
+   },
+   {
+    "expect": "gn05 на дёрне выросло 1"
+   },
+   {
+    "expect": "gn05 на стекле пусто 0"
+   },
+   {
+    "expect": "gn05 удобрение вырастило 1"
+   },
+   {
+    "expect": "gn05 убрано 1"
+   }
+  ]
+ },
+ {
+  "name": "gn06 жила: adjacently по кубу 26 соседей, replace_blocks_in_region меняет только камень",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@gn06\") {\n        end_thread()\n    }\n    cancel_event()\n    gn06_c = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn06_a = shift_all_coordinates(gn06_c, -1, -1, -1)\n    gn06_b = shift_all_coordinates(gn06_c, 1, 1, 1)\n    set_region(block(stone), gn06_a, gn06_b)\n    gn06_hole = shift_coordinate(gn06_c, 1, type: y)\n    set_block(gn06_hole, block(air))\n    gn06_card, gn06_square, gn06_adj, gn06_cube = 0, 0, 0, 0\n    adjacently(gn06_p, gn06_c, include_self: false, pattern: cardinal) {\n        gn06_card += 1\n    }\n    adjacently(gn06_p, gn06_c, include_self: false, pattern: square) {\n        gn06_square += 1\n    }\n    adjacently(gn06_p, gn06_c, include_self: false, pattern: adjacent) {\n        gn06_adj += 1\n    }\n    adjacently(gn06_p, gn06_c, include_self: false, pattern: cube) {\n        gn06_cube += 1\n        replace_blocks_in_region(gn06_p, gn06_p, block(iron_ore), block(stone))\n    }\n    send_message(\"gn06 кардинальный ${gn06_card} квадратный ${gn06_square} примыкающий ${gn06_adj} куб ${gn06_cube}\")\n    wait(2)\n    gn06_ore = 0\n    on_grid(gn06_p, gn06_a, gn06_b) {\n        if game.block_equals(block(iron_ore), gn06_p) {\n            gn06_ore += 1\n        }\n    }\n    send_message(\"gn06 руды ${gn06_ore}\")\n    gn06_air = game.block_equals(block(air), gn06_hole)\n    send_message(\"gn06 дырка осталась ${gn06_air}\")\n    gn06_core = game.block_equals(block(stone), gn06_c)\n    send_message(\"gn06 центр камень ${gn06_core}\")\n    clear_region(gn06_a, gn06_b)\n    wait(2)\n    gn06_gone = game.block_equals(block(air), gn06_c)\n    send_message(\"gn06 убрано ${gn06_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn06"
+   },
+   {
+    "expect": "gn06 кардинальный \\d+ квадратный \\d+ примыкающий \\d+ куб 26"
+   },
+   {
+    "expect": "gn06 руды 25"
+   },
+   {
+    "expect": "gn06 дырка осталась 1"
+   },
+   {
+    "expect": "gn06 центр камень 1"
+   },
+   {
+    "expect": "gn06 убрано 1"
+   }
+  ]
+ },
+ {
+  "name": "gn07 set_block списком: 300 мест одним действием, состояние блока текстом",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@gn07\") {\n        end_thread()\n    }\n    cancel_event()\n    gn07_a = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn07_b = shift_all_coordinates(gn07_a, 19, 0, 14)\n    gn07_list = create_list()\n    on_grid(gn07_p, gn07_a, gn07_b) {\n        gn07_list = append_value(gn07_p)\n    }\n    send_message(\"gn07 мест ${len(gn07_list)}\")\n    set_block(gn07_list, \"oak_stairs[facing=east]\")\n    wait(2)\n    gn07_count = 0\n    on_grid(gn07_p, gn07_a, gn07_b) {\n        if game.block_equals(block(oak_stairs), gn07_p) {\n            gn07_count += 1\n        }\n    }\n    send_message(\"gn07 поставлено ${gn07_count}\")\n    gn07_id = get_block_material(gn07_b, value_type: id_with_data)\n    gn07_ok = text_contains(gn07_id, \"facing=east\")\n    send_message(\"gn07 состояние ${gn07_ok} ${gn07_id}\")\n    gn07_plain = get_block_material(gn07_b)\n    send_message(\"gn07 id ${gn07_plain}\")\n    set_block(gn07_list, \"air\")\n    wait(2)\n    gn07_gone = game.block_equals(block(air), gn07_b)\n    send_message(\"gn07 убрано ${gn07_gone}\")\n    set_block(gn07_a, \"gn07_no_such_block\")\n    wait(2)\n    gn07_stone = game.block_equals(block(stone), gn07_a)\n    send_message(\"gn07 неверный id даёт камень ${gn07_stone}\")\n    set_block(gn07_a, \"air\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn07"
+   },
+   {
+    "expect": "gn07 мест 300"
+   },
+   {
+    "expect": "gn07 поставлено 300"
+   },
+   {
+    "expect": "gn07 состояние 1"
+   },
+   {
+    "expect": "gn07 id"
+   },
+   {
+    "expect": "gn07 убрано 1"
+   }
+  ],
+  "tolerate": "Ожидал аргумент"
+ },
+ {
+  "name": "gn08 предел списка 20 000: значение сверх него останавливает строку",
+  "code": "process gn08_fill() {\n    gn08_list = create_list()\n    gn08_n = 0\n    for gn08_i in 1..20000 {\n        gn08_list = append_value(gn08_i)\n        gn08_n += 1\n        if gn08_n >= 500 {\n            gn08_n = 0\n            wait(1)\n        }\n    }\n    send_message(\"gn08 размер ${len(gn08_list)}\")\n    gn08_list = append_value(1)\n    send_message(\"gn08 больше предела ${len(gn08_list)}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn08\") {\n        end_thread()\n    }\n    cancel_event()\n    start gn08_fill()\n}\n",
+  "steps": [
+   {
+    "say": "@gn08"
+   },
+   {
+    "expect": "gn08 размер 20000",
+    "timeout": 30000
+   },
+   {
+    "expect": "достиг лимита",
+    "timeout": 6000
+   },
+   {
+    "absent": "gn08 больше предела"
+   }
+  ],
+  "tolerate": "лимита|остановило строку"
+ },
+ {
+  "name": "gn09 отмена через запасник: clone_region возвращает блоки, поворот, воздух и содержимое сундука",
+  "code": "func gn09_snapshot(gn09_a: location, gn09_b: location, gn09_store: location) {\n    clone_region(gn09_a, gn09_b, gn09_a, gn09_store, ignore_air: false, copy_entity: false)\n}\n\nfunc gn09_restore(gn09_a: location, gn09_store: location, gn09_store_end: location) {\n    clone_region(gn09_store, gn09_store_end, gn09_store, gn09_a, ignore_air: false, copy_entity: false)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn09\") {\n        end_thread()\n    }\n    cancel_event()\n    gn09_a = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn09_b = shift_all_coordinates(gn09_a, 2, 2, 2)\n    gn09_store = shift_coordinate(gn09_a, 6, type: y)\n    gn09_size = get_vector_between_locations(gn09_a, gn09_b)\n    gn09_store_end = shift_location_on_vector(gn09_store, gn09_size)\n    gn09_stairs = shift_coordinate(gn09_a, 1, type: x)\n    gn09_empty = shift_coordinate(gn09_a, 2, type: x)\n    set_block(gn09_a, block(chest))\n    set_item_in_container_slot(gn09_a, item(diamond), 1)\n    set_block(gn09_stairs, \"oak_stairs[facing=south]\")\n    gn09_snapshot(gn09_a, gn09_b, gn09_store)\n    wait(2)\n    set_region(block(glass), gn09_a, gn09_b)\n    wait(2)\n    gn09_wiped = game.block_equals(block(glass), gn09_empty)\n    send_message(\"gn09 затёрто ${gn09_wiped}\")\n    gn09_restore(gn09_a, gn09_store, gn09_store_end)\n    wait(2)\n    gn09_chest = game.block_equals(block(chest), gn09_a)\n    send_message(\"gn09 сундук вернулся ${gn09_chest}\")\n    gn09_loot = 0\n    if container_has(gn09_a, item(diamond)) {\n        gn09_loot = 1\n    }\n    send_message(\"gn09 содержимое вернулось ${gn09_loot}\")\n    gn09_id = get_block_material(gn09_stairs, value_type: id_with_data)\n    gn09_ok = text_contains(gn09_id, \"facing=south\")\n    send_message(\"gn09 поворот вернулся ${gn09_ok}\")\n    gn09_air = game.block_equals(block(air), gn09_empty)\n    send_message(\"gn09 воздух вернулся ${gn09_air}\")\n    gn09_up = shift_coordinate(gn09_a, 1, type: y)\n    set_block(gn09_up, block(stone))\n    gn09_far = shift_coordinate(gn09_a, 5, type: x)\n    clone_region(gn09_up, gn09_up, gn09_a, gn09_far, ignore_air: false, copy_entity: false)\n    wait(2)\n    gn09_shifted = game.block_equals(block(stone), shift_coordinate(gn09_far, 1, type: y))\n    gn09_clean = game.block_equals(block(air), gn09_far)\n    send_message(\"gn09 кусок лёг со сдвигом ${gn09_shifted} ${gn09_clean}\")\n    clear_region(gn09_far, shift_coordinate(gn09_far, 1, type: y))\n    clear_region(gn09_a, gn09_store_end)\n    wait(2)\n    gn09_gone = game.block_equals(block(air), gn09_a)\n    send_message(\"gn09 убрано ${gn09_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn09"
+   },
+   {
+    "expect": "gn09 затёрто 1"
+   },
+   {
+    "expect": "gn09 сундук вернулся 1"
+   },
+   {
+    "expect": "gn09 содержимое вернулось 1"
+   },
+   {
+    "expect": "gn09 поворот вернулся 1"
+   },
+   {
+    "expect": "gn09 воздух вернулся 1"
+   },
+   {
+    "expect": "gn09 кусок лёг со сдвигом 1 1"
+   },
+   {
+    "expect": "gn09 убрано 1"
+   }
+  ]
+ },
+ {
+  "name": "gn10 отмена и повтор словарём id_with_data → места",
+  "code": "game `gn10_undo %player%`: list\ngame `gn10_redo %player%`: list\n\nfunc gn10_capture(gn10_a: location, gn10_b: location) {\n    gn10_ids = create_list()\n    on_grid(gn10_p, gn10_a, gn10_b) {\n        gn10_id = get_block_material(gn10_p, value_type: id_with_data)\n        if not gn10_id in gn10_ids {\n            gn10_ids = append_value(gn10_id)\n            `gn10_places %var_local(gn10_id)` = create_list()\n        }\n        `gn10_places %var_local(gn10_id)` = append_value(gn10_p)\n    }\n    gn10_taken = create_map()\n    for gn10_id in gn10_ids {\n        gn10_taken[gn10_id] = `gn10_places %var_local(gn10_id)`\n    }\n    return gn10_taken\n}\n\nfunc gn10_apply(gn10_what: map) {\n    for gn10_put_id: gn10_put_places in gn10_what {\n        set_block(gn10_put_places, gn10_put_id)\n    }\n}\n\nfunc gn10_step(gn10_a: location, gn10_b: location, gn10_new: block) {\n    `gn10_undo %player%` = append_value(gn10_capture(gn10_a, gn10_b))\n    `gn10_redo %player%` = create_list()\n    set_region(gn10_new, gn10_a, gn10_b)\n}\n\nfunc gn10_undo(gn10_a: location, gn10_b: location) {\n    gn10_last = len(`gn10_undo %player%`) - 1\n    if gn10_last < 0 {\n        return\n    }\n    gn10_snap = get_list_value(`gn10_undo %player%`, gn10_last)\n    `gn10_undo %player%` = remove_list_value_at_index(gn10_dropped, `gn10_undo %player%`, gn10_last)\n    `gn10_redo %player%` = append_value(gn10_capture(gn10_a, gn10_b))\n    gn10_apply(gn10_snap)\n}\n\nfunc gn10_redo(gn10_a: location, gn10_b: location) {\n    gn10_last = len(`gn10_redo %player%`) - 1\n    if gn10_last < 0 {\n        return\n    }\n    gn10_snap = get_list_value(`gn10_redo %player%`, gn10_last)\n    `gn10_redo %player%` = remove_list_value_at_index(gn10_dropped, `gn10_redo %player%`, gn10_last)\n    `gn10_undo %player%` = append_value(gn10_capture(gn10_a, gn10_b))\n    gn10_apply(gn10_snap)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn10\") {\n        end_thread()\n    }\n    cancel_event()\n    gn10_a = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn10_b = shift_all_coordinates(gn10_a, 3, 1, 3)\n    `gn10_undo %player%` = create_list()\n    `gn10_redo %player%` = create_list()\n    gn10_stairs = shift_coordinate(gn10_a, 1, type: x)\n    gn10_empty = shift_coordinate(gn10_a, 2, type: x)\n    set_block(gn10_a, block(stone))\n    set_block(gn10_stairs, \"oak_stairs[facing=west]\")\n    gn10_step(gn10_a, gn10_b, block(glass))\n    wait(2)\n    gn10_glass = game.block_equals(block(glass), gn10_empty)\n    send_message(\"gn10 правка ${gn10_glass}\")\n    gn10_undo(gn10_a, gn10_b)\n    wait(2)\n    gn10_stone = game.block_equals(block(stone), gn10_a)\n    gn10_air = game.block_equals(block(air), gn10_empty)\n    gn10_state = get_block_material(gn10_stairs, value_type: id_with_data)\n    gn10_face = text_contains(gn10_state, \"facing=west\")\n    send_message(\"gn10 отмена камень ${gn10_stone} воздух ${gn10_air} поворот ${gn10_face}\")\n    gn10_redo(gn10_a, gn10_b)\n    wait(2)\n    gn10_glass = game.block_equals(block(glass), gn10_stairs)\n    send_message(\"gn10 повтор ${gn10_glass}\")\n    clear_region(gn10_a, gn10_b)\n    wait(2)\n    gn10_gone = game.block_equals(block(air), gn10_a)\n    send_message(\"gn10 убрано ${gn10_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn10"
+   },
+   {
+    "expect": "gn10 правка 1"
+   },
+   {
+    "expect": "gn10 отмена камень 1 воздух 1 поворот 1"
+   },
+   {
+    "expect": "gn10 повтор 1"
+   },
+   {
+    "expect": "gn10 убрано 1"
+   }
+  ]
+ },
+ {
+  "name": "gn11 поворот на 90: вектор вокруг Y, get_block_data у ступеней, новая сторона",
+  "code": "func gn11_rotate(gn11_a: location, gn11_b: location, gn11_to: location, gn11_angle: number) {\n    on_grid(gn11_p, gn11_a, gn11_b) {\n        if not game.block_equals(\"air\", gn11_p) {\n            gn11_data = get_block_material(gn11_p, value_type: id_with_data)\n            gn11_v = get_vector_between_locations(gn11_a, gn11_p)\n            gn11_v = rotate_vector_around_axis(gn11_v, gn11_angle, axis: y)\n            if text_contains(gn11_data, \"facing=\") {\n                gn11_old = get_block_data(gn11_p, \"facing\")\n                if gn11_old != \"up\" and gn11_old != \"down\" {\n                    gn11_face = get_vector_from_block_face(gn11_old)\n                    gn11_face = rotate_vector_around_axis(gn11_face, gn11_angle, axis: y)\n                    gn11_new = vector_to_direction_name(gn11_face)\n                    gn11_data = replace_text(gn11_data, \"facing=${gn11_old}\", \"facing=${gn11_new}\")\n                }\n            }\n            set_block(shift_location_on_vector(gn11_to, gn11_v), gn11_data)\n        }\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn11\") {\n        end_thread()\n    }\n    cancel_event()\n    gn11_a = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn11_b = shift_coordinate(gn11_a, 3, type: x)\n    gn11_to = shift_coordinate(gn11_a, 4, type: y)\n    set_block(gn11_a, block(stone))\n    gn11_mid = shift_coordinate(gn11_a, 1, type: x)\n    set_block(gn11_mid, \"oak_stairs[facing=north]\")\n    set_block(gn11_b, block(glass))\n    gn11_seen = get_block_data(gn11_mid, \"facing\")\n    send_message(\"gn11 данные ступеней ${gn11_seen}\")\n    gn11_rotate(gn11_a, gn11_b, gn11_to, 90)\n    wait(2)\n    gn11_vec = rotate_vector_around_axis(vec(3, 0, 0), 90, axis: y)\n    gn11_glass_at = shift_location_on_vector(gn11_to, gn11_vec)\n    gn11_ok = game.block_equals(block(glass), gn11_glass_at)\n    send_message(\"gn11 стекло на месте ${gn11_ok}\")\n    gn11_x = get_vector_component(gn11_vec)\n    gn11_z = get_vector_component(gn11_vec, vector_component: z)\n    send_message(\"gn11 вектор ${round(gn11_x)} ${round(gn11_z)}\")\n    gn11_vec = rotate_vector_around_axis(vec(1, 0, 0), 90, axis: y)\n    gn11_mid2 = shift_location_on_vector(gn11_to, gn11_vec)\n    gn11_id = get_block_material(gn11_mid2, value_type: id_with_data)\n    gn11_ok = text_contains(gn11_id, [\"facing=east\", \"facing=west\"])\n    send_message(\"gn11 ступени повёрнуты ${gn11_ok} ${gn11_id}\")\n    clear_region(shift_all_coordinates(gn11_a, -4, 0, -4), shift_all_coordinates(gn11_a, 4, 5, 4))\n    wait(2)\n    gn11_gone = game.block_equals(block(air), gn11_a)\n    send_message(\"gn11 убрано ${gn11_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn11"
+   },
+   {
+    "expect": "gn11 данные ступеней north"
+   },
+   {
+    "expect": "gn11 стекло на месте 1"
+   },
+   {
+    "expect": "gn11 вектор"
+   },
+   {
+    "expect": "gn11 ступени повёрнуты 1"
+   },
+   {
+    "expect": "gn11 убрано 1"
+   }
+  ]
+ },
+ {
+  "name": "gn12 смесь по процентам: перемешать места, trim_list, счёт блоков словарём",
+  "code": "func gn12_mix(gn12_a: location, gn12_b: location, gn12_parts: map) {\n    gn12_all = create_list()\n    on_grid(gn12_p, gn12_a, gn12_b) {\n        gn12_all = append_value(gn12_p)\n    }\n    gn12_all = randomize_list_order(gn12_all)\n    gn12_from = 0\n    for gn12_id: gn12_percent in gn12_parts {\n        gn12_to = round(gn12_from + len(gn12_all) * gn12_percent / 100)\n        gn12_cut = trim_list(gn12_all, gn12_from, gn12_to)\n        set_block(gn12_cut, gn12_id)\n        gn12_from = gn12_to\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn12\") {\n        end_thread()\n    }\n    cancel_event()\n    gn12_a = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn12_b = shift_all_coordinates(gn12_a, 9, 0, 9)\n    gn12_mix(gn12_a, gn12_b, {\"glass\": 30, \"stone\": 70})\n    wait(2)\n    gn12_counts = create_map()\n    gn12_glass = 0\n    gn12_stone = 0\n    on_grid(gn12_q, gn12_a, gn12_b) {\n        if game.block_equals(block(glass), gn12_q) {\n            gn12_glass += 1\n        }\n        if game.block_equals(block(stone), gn12_q) {\n            gn12_stone += 1\n        }\n        gn12_kind = get_block_material(gn12_q)\n        gn12_counts[gn12_kind] += 1\n    }\n    send_message(\"gn12 стекло ${gn12_glass} камень ${gn12_stone}\")\n    send_message(\"gn12 разных ${len(gn12_counts)} словарь ${gn12_counts}\")\n    clear_region(gn12_a, gn12_b)\n    wait(2)\n    gn12_gone = game.block_equals(block(air), gn12_b)\n    send_message(\"gn12 убрано ${gn12_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn12"
+   },
+   {
+    "expect": "gn12 стекло 30 камень 70"
+   },
+   {
+    "expect": "gn12 разных 2"
+   },
+   {
+    "expect": "gn12 убрано 1"
+   }
+  ]
+ },
+ {
+  "name": "gn13 долгая операция: босс-бар из общих локальных, занято, остановка флагом",
+  "code": "game `gn13_busy %player%`\ngame `gn13_stop %player%`\n\nprocess gn13_bar() {\n    while gn13_running == 1 {\n        wait(5)\n        gn13_percent = floor(gn13_done * 100 / gn13_total)\n        set_boss_bar(\"gn13\", \"gn13 ${gn13_percent}%\", gn13_percent, style: notched_20, color: green)\n    }\n    remove_boss_bar(\"gn13\")\n}\n\nprocess gn13_work(gn13_a: location, gn13_b: location) {\n    gn13_running, gn13_done, gn13_total = 1, 0, 2000\n    start gn13_bar(local_variables_mode: share)\n    on_grid(gn13_p, gn13_a, gn13_b) {\n        if `gn13_stop %player%` == 1 {\n            break\n        }\n        set_block(gn13_p, block(glass))\n        gn13_done += 1\n        if remainder(gn13_done, 10) == 0 {\n            wait(1)\n        }\n    }\n    gn13_running = 0\n    gn13_ok = gn13_done < gn13_total\n    if `gn13_stop %player%` == 1 {\n        send_message(\"gn13 остановлено ${gn13_ok}\")\n    } else {\n        send_message(\"gn13 готово\")\n    }\n    purge([\"gn13_busy %player%\", \"gn13_stop %player%\"])\n    clear_region(gn13_a, gn13_b)\n    wait(5)\n    gn13_gone = game.block_equals(block(air), gn13_a)\n    send_message(\"gn13 убрано ${gn13_gone}\")\n}\n\nwhen player_chat {\n    if chat_message_equals(\"@gn13\") {\n        cancel_event()\n        if `gn13_busy %player%` == 1 {\n            send_message(\"gn13 занято\")\n            end_thread()\n        }\n        `gn13_busy %player%` = 1\n        gn13_a = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n        send_message(\"gn13 старт\")\n        start gn13_work(gn13_a, shift_all_coordinates(gn13_a, 19, 4, 19))\n    }\n    if chat_message_equals(\"@gn13стоп\") {\n        cancel_event()\n        `gn13_stop %player%` = 1\n    }\n}\n",
+  "steps": [
+   {
+    "say": "@gn13"
+   },
+   {
+    "expect": "gn13 старт"
+   },
+   {
+    "bossbar": "gn13 \\d+%",
+    "timeout": 5000
+   },
+   {
+    "wait": 1000
+   },
+   {
+    "say": "@gn13"
+   },
+   {
+    "expect": "gn13 занято"
+   },
+   {
+    "wait": 1000
+   },
+   {
+    "say": "@gn13стоп"
+   },
+   {
+    "expect": "gn13 остановлено 1",
+    "timeout": 6000
+   },
+   {
+    "expect": "gn13 убрано 1"
+   },
+   {
+    "absent": "gn13 готово"
+   }
+  ]
+ },
+ {
+  "name": "gn14 полая сфера двумя радиусами и стены четырьмя set_region",
+  "code": "func gn14_shell(gn14_c: location, gn14_r: number, gn14_block: block) {\n    on_grid(gn14_p, shift_all_coordinates(gn14_c, -gn14_r, -gn14_r, -gn14_r), shift_all_coordinates(gn14_c, gn14_r, gn14_r, gn14_r)) {\n        if location_is_near(gn14_p, gn14_r + 0.5, gn14_c) and not location_is_near(gn14_p, gn14_r - 0.5, gn14_c) {\n            set_block(gn14_p, gn14_block)\n        }\n    }\n}\n\nfunc gn14_walls(gn14_a: location, gn14_b: location, gn14_block: block) {\n    get_all_coordinates(gn14_a, gn14_x1, gn14_y1, gn14_z1)\n    get_all_coordinates(gn14_b, gn14_x2, gn14_y2, gn14_z2)\n    set_region(gn14_block, gn14_a, loc(gn14_x2, gn14_y2, gn14_z1))\n    set_region(gn14_block, loc(gn14_x2, gn14_y1, gn14_z1), gn14_b)\n    set_region(gn14_block, gn14_b, loc(gn14_x1, gn14_y1, gn14_z2))\n    set_region(gn14_block, loc(gn14_x1, gn14_y2, gn14_z2), gn14_a)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn14\") {\n        end_thread()\n    }\n    cancel_event()\n    gn14_c = shift_coordinate(align_location(value.location, rotation_mode: remove), 10, type: y)\n    gn14_shell(gn14_c, 4, block(glass))\n    wait(2)\n    gn14_top = game.block_equals(block(glass), shift_coordinate(gn14_c, 4, type: y))\n    gn14_mid = game.block_equals(block(air), shift_coordinate(gn14_c, 3, type: y))\n    gn14_core = game.block_equals(block(air), gn14_c)\n    send_message(\"gn14 оболочка ${gn14_top} внутри ${gn14_mid} центр ${gn14_core}\")\n    gn14_a1 = shift_all_coordinates(gn14_c, -5, -5, -5)\n    gn14_b1 = shift_all_coordinates(gn14_c, 5, 5, 5)\n    clear_region(gn14_a1, gn14_b1)\n    wait(2)\n    gn14_a = shift_all_coordinates(gn14_c, -3, -1, -3)\n    gn14_b = shift_all_coordinates(gn14_c, 3, 1, 3)\n    gn14_walls(gn14_a, gn14_b, block(stone))\n    wait(2)\n    gn14_corner = game.block_equals(block(stone), shift_all_coordinates(gn14_c, 3, 1, -3))\n    gn14_side = game.block_equals(block(stone), shift_all_coordinates(gn14_c, -3, 0, 1))\n    gn14_inside = game.block_equals(block(air), shift_all_coordinates(gn14_c, 2, 0, 2))\n    send_message(\"gn14 угол ${gn14_corner} стена ${gn14_side} внутри ${gn14_inside}\")\n    clear_region(gn14_a1, gn14_b1)\n    wait(2)\n    gn14_gone = game.block_equals(block(air), gn14_a)\n    send_message(\"gn14 убрано ${gn14_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn14"
+   },
+   {
+    "expect": "gn14 оболочка 1 внутри 1 центр 1"
+   },
+   {
+    "expect": "gn14 угол 1 стена 1 внутри 1"
+   },
+   {
+    "expect": "gn14 убрано 1"
+   }
+  ]
+ },
+ {
+  "name": "gn15 подземелье: комната, спавнер, сундук с лутом в слоте",
+  "code": "const GN15_LOOT = [item(diamond), item(iron_ingot, 3), item(golden_apple)]\n\nfunc gn15_room(gn15_c: location) {\n    gn15_a = shift_all_coordinates(gn15_c, -3, -1, -3)\n    gn15_b = shift_all_coordinates(gn15_c, 3, 3, 3)\n    set_region(block(mossy_cobblestone), gn15_a, gn15_b)\n    clear_region(shift_all_coordinates(gn15_a, 1, 1, 1), shift_all_coordinates(gn15_b, -1, -1, -1))\n    set_block(gn15_c, block(spawner))\n    set_spawner_entity(gn15_c, item(zombie_spawn_egg))\n    gn15_chest = shift_coordinate(gn15_c, 2, type: x)\n    set_block(gn15_chest, block(chest))\n    repeat 5 {\n        set_item_in_container_slot(gn15_chest, get_list_random_value(GN15_LOOT), random_number(1, 27))\n    }\n    set_item_in_container_slot(gn15_chest, item(emerald), 1)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@gn15\") {\n        end_thread()\n    }\n    cancel_event()\n    gn15_c = shift_coordinate(align_location(value.location, rotation_mode: remove), 8, type: y)\n    gn15_room(gn15_c)\n    wait(2)\n    gn15_wall = game.block_equals(block(mossy_cobblestone), shift_coordinate(gn15_c, 3, type: x))\n    gn15_spawner = game.block_equals(block(spawner), gn15_c)\n    send_message(\"gn15 стена ${gn15_wall} спавнер ${gn15_spawner}\")\n    gn15_box = shift_coordinate(gn15_c, 2, type: x)\n    gn15_has = 0\n    if container_has(gn15_box, item(emerald)) {\n        gn15_has = 1\n    }\n    send_message(\"gn15 лут ${gn15_has}\")\n    clear_region(shift_all_coordinates(gn15_c, -3, -1, -3), shift_all_coordinates(gn15_c, 3, 3, 3))\n    wait(2)\n    gn15_gone = game.block_equals(block(air), gn15_c)\n    send_message(\"gn15 убрано ${gn15_gone}\")\n}\n",
+  "steps": [
+   {
+    "say": "@gn15"
+   },
+   {
+    "expect": "gn15 стена 1 спавнер 1"
+   },
+   {
+    "expect": "gn15 лут 1"
+   },
+   {
+    "expect": "gn15 убрано 1"
+   }
+  ]
+ }
+]

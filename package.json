@@ -1,0 +1,29 @@
+{
+  "name": "justmc-mcp",
+  "version": "1.1.0",
+  "description": "MCP для JustMC Creative+: код на Xero, знания из модулей, мир и игрок",
+  "type": "module",
+  "main": "src/index.mjs",
+  "bin": {
+    "justmc-mcp": "src/index.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node src/index.mjs",
+    "crawl": "node scripts/crawl.mjs",
+    "learn": "node scripts/learn.mjs",
+    "agent": "node scripts/build-agent.mjs",
+    "verify": "node scripts/verify-guide.mjs",
+    "skill": "node scripts/install-skill.mjs",
+    "sync": "node scripts/sync.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.1",
+    "better-sqlite3": "^13.0.3",
+    "undici": "^7.16.0",
+    "zod": "^4.3.4"
+  }
+}

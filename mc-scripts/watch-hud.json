@@ -1,0 +1,7 @@
+{
+  "name": "watch-hud",
+  "kind": "js",
+  "description": "Следить за экшенбаром, тайтлами, боссбаром и чатом: args.seconds, args.types",
+  "params": [],
+  "updated": "2026-11-05T05:56:22.070Z"
+}

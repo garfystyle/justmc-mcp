@@ -1,0 +1,418 @@
+[
+ {
+  "name": "fx01 список частиц и мест, всем",
+  "code": "const FX01_A = particle(flame, count: 3, first_spread: 0.3, second_spread: 0.3)\nconst FX01_B = particle(soul_fire_flame, count: 3)\n\nwhen player_chat {\n    if not chat_message_equals(\"@fx01\") {\n        end_thread()\n    }\n    cancel_event()\n    repeat 10 {\n        @all display_particle([FX01_A, FX01_B], [value.location, value.eye_location])\n        player_by_conditional(is_near(24, value.location, ignore_y_axis: false))\n        display_particle(particle(heart), value.location)\n        reset()\n        wait(5)\n    }\n    send_message(\"fx01 готово\")\n}\n",
+  "steps": [
+   {
+    "say": "@fx01"
+   },
+   {
+    "particle": "^(minecraft:)?flame$",
+    "timeout": 4000
+   },
+   {
+    "particle": "soul_fire_flame",
+    "timeout": 4000
+   },
+   {
+    "particle": "heart",
+    "timeout": 4000
+   },
+   {
+    "expect": "fx01 готово",
+    "timeout": 5000
+   }
+  ]
+ },
+ {
+  "name": "fx02 шесть фигур одним блоком",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@fx02\") {\n        end_thread()\n    }\n    cancel_event()\n    at = value.location\n    far = shift_all_coordinates(at, 3, 1, 0)\n    corner = shift_all_coordinates(at, 2, 2, 2)\n    ray = multiply_vector(value.direction_of_view, 4)\n    repeat 12 {\n        @all display_particle_line(particle(crit), at, far, 0.5, unit_of_measurement: distance)\n        @all display_particle_ray(particle(electric_spark), value.eye_location, ray, 0.5, unit_of_measurement: distance)\n        @all display_particle_circle(particle(end_rod), at, 2, 16, 0, vec(0, 1, 0))\n        @all display_particle_sphere(particle(cloud), at, 2, 40)\n        @all display_particle_cube(particle(happy_villager), at, corner, 0.5, type: wireframe)\n        @all display_particle_spiral(particle(small_flame), at, 3, 1, 30, 2, 0)\n        wait(5)\n    }\n    send_message(\"fx02 готово\")\n}\n",
+  "steps": [
+   {
+    "say": "@fx02"
+   },
+   {
+    "particle": "crit",
+    "timeout": 4000
+   },
+   {
+    "particle": "electric_spark",
+    "timeout": 4000
+   },
+   {
+    "particle": "end_rod",
+    "timeout": 4000
+   },
+   {
+    "particle": "cloud",
+    "timeout": 4000
+   },
+   {
+    "particle": "happy_villager",
+    "timeout": 4000
+   },
+   {
+    "particle": "small_flame",
+    "timeout": 4000
+   },
+   {
+    "expect": "fx02 готово",
+    "timeout": 6000
+   }
+  ]
+ },
+ {
+  "name": "fx03 обход точек: число, радиус, плоскость",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@fx03\") {\n        end_thread()\n    }\n    cancel_event()\n    at = value.location\n    top = shift_coordinate(at, 3, type: y)\n    n1 = 0\n    last = at\n    on_circle(pos, at, 2, 12, vec(0, 1, 0), 0) {\n        n1 += 1\n        last = pos\n    }\n    r = locations_distance(at, last)\n    y0 = get_coordinate(at, type: y)\n    y1 = get_coordinate(last, type: y)\n    n2 = 0\n    on_path(step, 0.5, [at, top]) {\n        n2 += 1\n    }\n    n3 = 0\n    on_sphere(dot, at, 2, 30) {\n        n3 += 1\n    }\n    send_message(\"fx03 круг=${n1} радиус=${round(r)} высота=${round(y1 - y0)} путь=${n2} сфера=${n3}\")\n}\n",
+  "steps": [
+   {
+    "say": "@fx03"
+   },
+   {
+    "expect": "fx03 круг=13(\\.0)? радиус=2(\\.0)? высота=0(\\.0)? путь=[67](\\.0)? сфера=31(\\.0)?"
+   }
+  ]
+ },
+ {
+  "name": "fx04 цвет и материал переменной: to_hsb, set_particle_color, wrap",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@fx04\") {\n        end_thread()\n    }\n    cancel_event()\n    hex = to_hsb(0, 100, 100)\n    p = set_particle_color(particle(dust, size: 1.5), hex)\n    got = get_particle_color(p)\n    hue = 350\n    hue = wrap(hue + 15, 0, 360)\n    send_message(\"fx04 цвет=${hex} назад=${got} оттенок=${hue}\")\n    chips = set_particle_material(particle(block, count: 5, first_spread: 0.5, second_spread: 0.5), item(oak_log))\n    repeat 10 {\n        hue = wrap(hue + 15, 0, 360)\n        hex = to_hsb(hue, 100, 100)\n        p = set_particle_color(p, hex)\n        @all display_particle_circle(p, value.location, 2, 12, 0, vec(0, 1, 0))\n        @all display_particle(chips, value.location)\n        wait(5)\n    }\n}\n",
+  "steps": [
+   {
+    "say": "@fx04"
+   },
+   {
+    "expect": "fx04 цвет=#ff0000 назад=#ff0000 оттенок=5(\\.0)?"
+   },
+   {
+    "particle": "^(minecraft:)?dust$",
+    "timeout": 4000
+   },
+   {
+    "particle": "^(minecraft:)?block$",
+    "timeout": 4000
+   }
+  ]
+ },
+ {
+  "name": "fx05 вращение в процессе: start_angle, темп, событие свободно",
+  "code": "process fx05_spin(at: location, steps: number) {\n    t0 = value.server_current_tick\n    a = 0\n    repeat steps {\n        a = wrap(a + 12, 0, 360)\n        @all display_particle_circle(particle(end_rod), at, 1.5, 3, a, vec(0, 1, 0))\n        wait(2)\n    }\n    t1 = value.server_current_tick\n    @all send_message(\"fx05 тиков=${t1 - t0} угол=${a}\")\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@fx05\") {\n        end_thread()\n    }\n    cancel_event()\n    start fx05_spin(value.location, 30, target_mode: no_target)\n    send_message(\"fx05 событие свободно\")\n}\n",
+  "steps": [
+   {
+    "say": "@fx05"
+   },
+   {
+    "expect": "fx05 событие свободно",
+    "timeout": 1000
+   },
+   {
+    "particle": "end_rod",
+    "timeout": 3000
+   },
+   {
+    "expect": "fx05 тиков=(5[5-9]|6[0-9]|7[0-5])(\\.0)? угол=",
+    "timeout": 6000
+   }
+  ]
+ },
+ {
+  "name": "fx06 аура: цикл на мир, список, выключение",
+  "code": "game fx06_aura: list\ngame fx06_frames\ngame fx06_mark\n\nprocess fx06_loop() {\n    forever {\n        wait(4)\n        for name in fx06_aura {\n            player_by_name(name)\n            at = @current value.location\n            @all display_particle_circle(particle(witch), at, 0.8, 4, 0, vec(0, 1, 0))\n            fx06_frames += 1\n        }\n        reset()\n    }\n}\n\nwhen world_start {\n    fx06_aura = []\n    fx06_frames = 0\n    start fx06_loop(target_mode: no_target)\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@fx06\") {\n        end_thread()\n    }\n    cancel_event()\n    if value.name in fx06_aura {\n        fx06_aura = remove_list_value(fx06_aura, value.name, remove_mode: all)\n        fx06_mark = fx06_frames\n        send_message(\"fx06 выкл кадров=${fx06_frames}\")\n    } else {\n        fx06_aura = append_value(value.name)\n        send_message(\"fx06 вкл\")\n    }\n}\n\nwhen player_chat {\n    if not chat_message_equals(\"@fx06n\") {\n        end_thread()\n    }\n    cancel_event()\n    send_message(\"fx06 после выкл кадров=${fx06_frames - fx06_mark}\")\n}\n",
+  "steps": [
+   {
+    "say": "@fx06"
+   },
+   {
+    "expect": "fx06 вкл"
+   },
+   {
+    "particle": "witch",
+    "timeout": 3000
+   },
+   {
+    "wait": 1000
+   },
+   {
+    "say": "@fx06"
+   },
+   {
+    "expect": "fx06 выкл кадров=([2-9]|\\d\\d+)"
+   },
+   {
+    "wait": 1200
+   },
+   {
+    "say": "@fx06n"
+   },
+   {
+    "expect": "fx06 после выкл кадров=0(\\.0)?"
+   }
+  ]
+ },
+ {
+  "name": "fx07 след снаряда и попадание",
+  "code": "const FX07_SHOT = \"fx07_shot\"\n\nwhen player_chat {\n    if not chat_message_equals(\"@fx07\") {\n        end_thread()\n    }\n    cancel_event()\n    repeat 4 {\n        player.launch_projectile(item(snowball), value.eye_location, FX07_SHOT, 1.2, 0, trail: particle(totem_of_undying))\n        wait(10)\n    }\n}\n\nwhen player_projectile_hit {\n    if @projectile entity.name_equals(FX07_SHOT) {\n        @all display_particle(particle(explosion), @projectile value.location)\n        send_message(\"fx07 попал\")\n    }\n}\n",
+  "steps": [
+   {
+    "look": {
+     "yaw": 0,
+     "pitch": 20
+    }
+   },
+   {
+    "say": "@fx07"
+   },
+   {
+    "particle": "totem_of_undying",
+    "timeout": 4000
+   },
+   {
+    "expect": "fx07 попал",
+    "timeout": 5000
+   },
+   {
+    "particle": "^(minecraft:)?explosion$",
+    "timeout": 3000
+   }
+  ]
+ },
+ {
+  "name": "fx08 поля звука и set_sound_*",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@fx08\") {\n        end_thread()\n    }\n    cancel_event()\n    s = sound(entity.experience_orb.pickup, volume: 0.6, pitch: 1.5, source: player)\n    s = set_sound_pitch(s, 0.75)\n    p = get_sound_pitch(s)\n    v = get_sound_volume_action(s)\n    src = get_sound_source(s)\n    send_message(\"fx08 высота=${p} громкость=${v} источник=${src}\")\n    repeat 8 {\n        play_sound(s)\n        wait(5)\n    }\n}\n",
+  "steps": [
+   {
+    "say": "@fx08"
+   },
+   {
+    "expect": "fx08 высота=0\\.75 громкость=0\\.[56]\\d* источник=player"
+   },
+   {
+    "sound": "entity.experience_orb.pickup",
+    "timeout": 3000
+   }
+  ]
+ },
+ {
+  "name": "fx09 ноты по формуле и последовательность звуков",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@fx09\") {\n        end_thread()\n    }\n    cancel_event()\n    low = pow(2, (0 - 12) / 12)\n    high = pow(2, (24 - 12) / 12)\n    send_message(\"fx09 ноты ${low} ${high}\")\n    t0 = value.server_current_tick\n    play_sound_sequence([sound(\"block.note_block.harp\"), sound(\"block.note_block.bell\")], value.location, 10)\n    t1 = value.server_current_tick\n    send_message(\"fx09 строка ждала ${t1 - t0}\")\n    repeat 4 {\n        wait(25)\n        play_sound_sequence([sound(\"block.note_block.harp\"), sound(\"block.note_block.bell\")], value.location, 10)\n    }\n}\n",
+  "steps": [
+   {
+    "say": "@fx09"
+   },
+   {
+    "expect": "fx09 ноты 0\\.50* 2(\\.0*)?"
+   },
+   {
+    "expect": "fx09 строка ждала \\d+"
+   },
+   {
+    "sound": "block.note_block.harp",
+    "timeout": 4000
+   },
+   {
+    "sound": "block.note_block.bell",
+    "timeout": 4000
+   }
+  ]
+ },
+ {
+  "name": "fx10 титул, подтитул и подпись без заголовка",
+  "code": "when player_chat {\n    if chat_message_equals(\"@fx10\") {\n        cancel_event()\n        send_title(\"&afx10 заголовок\", \"&7fx10 подпись\", 0, 60, 10)\n    }\n    if chat_message_equals(\"@fx10b\") {\n        cancel_event()\n        send_title(subtitle: \"&7fx10 без заголовка\", fade_in: 0, stay: 60, fade_out: 0)\n    }\n}\n",
+  "steps": [
+   {
+    "say": "@fx10"
+   },
+   {
+    "title": "fx10 заголовок",
+    "timeout": 2000
+   },
+   {
+    "subtitle": "fx10 подпись",
+    "timeout": 2000
+   },
+   {
+    "wait": 4000
+   },
+   {
+    "say": "@fx10b"
+   },
+   {
+    "subtitle": "fx10 без заголовка",
+    "timeout": 2000
+   },
+   {
+    "java": "java.lang.reflect.Field f = mc.gui.hud.getClass().getDeclaredField(\"title\"); f.setAccessible(true); return f.get(mc.gui.hud) != null;",
+    "equals": "true"
+   }
+  ]
+ },
+ {
+  "name": "fx11 экшн-бар: печать по буквам и полоса",
+  "code": "process fx11_type(line: text) {\n    n = text_length(line)\n    for i in 1..n {\n        part = trim_text(line, 0, i)\n        send_action_bar(\"&6${part}\")\n        wait(1)\n    }\n    send_message(\"fx11 напечатано\")\n}\n\nfunc fx11_bar(now: number, total: number) {\n    full = round(now / total * 20)\n    done = repeat_text(\"█\", full)\n    left = repeat_text(\"█\", 20 - full)\n    send_action_bar(\"&a${done}&8${left}\")\n    send_message(\"fx11 полных=${full}\")\n}\n\nwhen player_chat {\n    if chat_message_equals(\"@fx11\") {\n        cancel_event()\n        start fx11_type(\"fx11 Привет, мир\")\n    }\n    if chat_message_equals(\"@fx11b\") {\n        cancel_event()\n        fx11_bar(7, 10)\n    }\n}\n",
+  "steps": [
+   {
+    "say": "@fx11"
+   },
+   {
+    "expect": "fx11 напечатано",
+    "timeout": 4000
+   },
+   {
+    "actionbar": "fx11 Привет, мир$",
+    "timeout": 2000
+   },
+   {
+    "say": "@fx11b"
+   },
+   {
+    "expect": "fx11 полных=14(\\.0)?"
+   },
+   {
+    "actionbar": "█{20}",
+    "timeout": 2000
+   }
+  ]
+ },
+ {
+  "name": "fx12 босс-бар здоровья по событию: один id, снятие",
+  "code": "const FX12_BOSS = \"fx12_boss\"\n\nwhen entity_take_damage {\n    if not @victim entity.name_equals(FX12_BOSS) {\n        end_thread()\n    }\n    now = value.current_health - value.event_final_damage\n    total = value.max_health\n    if now > 0 {\n        @all set_boss_bar(\"fx12\", \"&cfx12 Страж &f${round(now)}\", now / total * 100, style: notched_10, color: red, sky_effect: dark_sky)\n    }\n}\n\nwhen entity_death {\n    if entity.name_equals(FX12_BOSS) {\n        @all remove_boss_bar(\"fx12\")\n        @all send_message(\"fx12 босс убит\")\n    }\n}\n\nwhen player_chat {\n    if chat_message_equals(\"@fx12\") {\n        cancel_event()\n        entity_by_name(FX12_BOSS)\n        @current entity.remove()\n        reset()\n        at = shift_location_in_direction(value.location, 3)\n        spawn_mob(mob: item(husk_spawn_egg), location: at, custom_name: FX12_BOSS)\n        @last set_ai(ai: false)\n        @last entity.damage(5)\n    }\n    if chat_message_equals(\"@fx12b\") {\n        cancel_event()\n        entity_by_name(FX12_BOSS)\n        @current entity.damage(5)\n    }\n    if chat_message_equals(\"@fx12k\") {\n        cancel_event()\n        entity_by_name(FX12_BOSS)\n        @current entity.damage(999)\n    }\n}\n",
+  "steps": [
+   {
+    "say": "@fx12"
+   },
+   {
+    "bossbar": "fx12 Страж 15",
+    "timeout": 3000
+   },
+   {
+    "wait": 1200
+   },
+   {
+    "say": "@fx12b"
+   },
+   {
+    "bossbar": "fx12 Страж 10",
+    "timeout": 3000
+   },
+   {
+    "java": "java.lang.reflect.Field f = mc.gui.hud.getBossOverlay().getClass().getDeclaredField(\"events\"); f.setAccessible(true); return ((java.util.Map) f.get(mc.gui.hud.getBossOverlay())).size();",
+    "equals": 1
+   },
+   {
+    "wait": 1200
+   },
+   {
+    "say": "@fx12k"
+   },
+   {
+    "expect": "fx12 босс убит",
+    "timeout": 3000
+   },
+   {
+    "wait": 300
+   },
+   {
+    "java": "java.lang.reflect.Field f = mc.gui.hud.getBossOverlay().getClass().getDeclaredField(\"events\"); f.setAccessible(true); return ((java.util.Map) f.get(mc.gui.hud.getBossOverlay())).size();",
+    "equals": 0
+   }
+  ]
+ },
+ {
+  "name": "fx13 молния напоказ, вспышка, фейерверк",
+  "code": "const FX13_ROCKET = item(firework_rocket, components: \"{fireworks:{flight_duration:1b,explosions:[{shape:'large_ball',colors:[I;16711680],has_trail:true}]}}\")\n\nwhen player_chat {\n    if not chat_message_equals(\"@fx13\") {\n        end_thread()\n    }\n    cancel_event()\n    at = shift_location_in_direction(value.location, 6)\n    repeat 8 {\n        @all display_lightning(at)\n        @all display_particle(particle(flash, color: \"#ffffff\"), at)\n        wait(5)\n    }\n    launch_firework(FX13_ROCKET, shift_coordinate(at, 1, type: y))\n    send_message(\"fx13 ракета\")\n}\n\nwhen firework_explode {\n    @all send_message(\"fx13 взрыв ракеты\")\n}\n",
+  "steps": [
+   {
+    "say": "@fx13"
+   },
+   {
+    "entity": {
+     "type": "lightning_bolt",
+     "radius": 16
+    },
+    "timeout": 2000
+   },
+   {
+    "particle": "flash",
+    "timeout": 2000
+   },
+   {
+    "expect": "fx13 ракета",
+    "timeout": 4000
+   },
+   {
+    "event": {
+     "type": "entity_add",
+     "match": "firework_rocket"
+    },
+    "timeout": 2000
+   },
+   {
+    "expect": "fx13 взрыв ракеты",
+    "timeout": 5000
+   }
+  ]
+ },
+ {
+  "name": "fx14 экран: красная рамка и мороз, снятие",
+  "code": "when player_chat {\n    if chat_message_equals(\"@fx14\") {\n        cancel_event()\n        set_world_border(value.location, 10000000, 100000)\n        player.set_freeze_ticks(100, ticking_locked: true)\n        send_message(\"fx14 вкл\")\n    }\n    if chat_message_equals(\"@fx14b\") {\n        cancel_event()\n        remove_world_border()\n        player.set_freeze_ticks(0, ticking_locked: false)\n        send_message(\"fx14 выкл\")\n    }\n}\n",
+  "steps": [
+   {
+    "say": "@fx14"
+   },
+   {
+    "expect": "fx14 вкл"
+   },
+   {
+    "wait": 300
+   },
+   {
+    "java": "mc.level.getWorldBorder().getWarningBlocks()",
+    "equals": 100000
+   },
+   {
+    "java": "mc.player.getTicksFrozen() > 0",
+    "equals": "true"
+   },
+   {
+    "say": "@fx14b"
+   },
+   {
+    "expect": "fx14 выкл"
+   },
+   {
+    "wait": 300
+   },
+   {
+    "java": "mc.level.getWorldBorder().getWarningBlocks() < 1000",
+    "equals": "true"
+   },
+   {
+    "java": "mc.player.getTicksFrozen() == 0",
+    "equals": "true"
+   }
+  ]
+ },
+ {
+  "name": "fx15 цена: точки против count, нагрузка, облако вместо цикла",
+  "code": "when player_chat {\n    if not chat_message_equals(\"@fx15\") {\n        end_thread()\n    }\n    cancel_event()\n    vis = value.particle_visibility\n    c0 = value.particle_cpu_usage\n    repeat 40 {\n        @all display_particle_sphere(particle(end_rod), value.location, 3, 300)\n        wait(1)\n    }\n    c1 = value.particle_cpu_usage\n    repeat 40 {\n        @all display_particle(particle(end_rod, count: 300, first_spread: 3, second_spread: 3), value.location)\n        wait(1)\n    }\n    c2 = value.particle_cpu_usage\n    send_message(\"fx15 видимость=${vis} покой=${c0} точки=${c1} count=${c2}\")\n    at = shift_location_in_direction(value.location, 4)\n    spawn_effect_cloud(at, particle(flame), 60, \"fx15_cloud\", 2, potion(slowness, amplifier: 0, duration: 20))\n    wait(40)\n    entity_by_name(\"fx15_cloud\")\n    send_message(\"fx15 облако=${value.selection_size}\")\n    @current entity.remove()\n}\n",
+  "steps": [
+   {
+    "say": "@fx15"
+   },
+   {
+    "expect": "fx15 видимость=(all|decreased|minimal) покой=[\\d.]+ точки=[\\d.]+ count=[\\d.]+",
+    "timeout": 9000
+   },
+   {
+    "entity": {
+     "type": "area_effect_cloud",
+     "radius": 16
+    },
+    "timeout": 1500
+   },
+   {
+    "expect": "fx15 облако=1(\\.0)?",
+    "timeout": 4000
+   }
+  ]
+ }
+]

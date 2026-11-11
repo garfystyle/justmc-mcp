@@ -1,0 +1,13 @@
+await game.look({ yaw: 0, pitch: 85 });
+await game.sleep(300);
+const before = await game.inventory();
+log("inv before: " + JSON.stringify(before).slice(0, 200));
+const hit = await game.java("mc.hitResult.getBlockPos().toString() + ' ' + mc.level.getBlockState(mc.hitResult.getBlockPos()).toString()".replace(/'/g, '"'));
+log("target: " + JSON.stringify(hit));
+await game.hold(["attack"], 1800);
+await game.sleep(1500);
+const after = await game.inventory();
+log("inv after: " + JSON.stringify(after).slice(0, 300));
+const near = await game.java("mc.level.getBlockState(mc.player.blockPosition().below()).toString()");
+log("below: " + JSON.stringify(near));
+return "done";

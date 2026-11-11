@@ -1,0 +1,7 @@
+{
+  "name": "hitbox-matrix",
+  "kind": "js",
+  "description": "По одному манекену на признак: бьёт его напрямую и смотрит, пришёл ли DBG из entity_take_damage",
+  "params": [],
+  "updated": "2026-11-07T19:16:18.283Z"
+}

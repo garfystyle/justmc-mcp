@@ -1,0 +1,7 @@
+{
+  "name": "mine-at",
+  "kind": "js",
+  "description": "Ломает блок через клиентский gameMode, как зажатая ЛКМ: args.x,y,z, args.face (north south east west up down), args.ms",
+  "params": [],
+  "updated": "2026-11-07T19:02:05.024Z"
+}

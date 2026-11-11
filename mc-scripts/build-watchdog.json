@@ -1,0 +1,7 @@
+{
+  "name": "build-watchdog",
+  "kind": "js",
+  "description": "Сторож стройки: при первой ☠ или ❌ в чате сам вводит /build. args.seconds, args.done (regex конца)",
+  "params": [],
+  "updated": "2026-11-07T18:59:30.707Z"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "probe_scene",
+  "kind": "js",
+  "description": "Смотрит формат данных сцены",
+  "params": [],
+  "updated": "2026-11-07T18:17:52.562Z"
+}

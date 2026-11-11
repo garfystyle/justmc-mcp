@@ -1,0 +1,18 @@
+var conn = mc.getConnection().getConnection();
+var f = net.minecraft.network.Connection.class.getDeclaredField("channel");
+f.setAccessible(true);
+var ch = f.get(conn);
+var A = justmc.agent.Agent.class;
+var liveField = A.getDeclaredField("live");
+liveField.setAccessible(true);
+var agent = liveField.get(null);
+var tapField = A.getDeclaredField("tap");
+tapField.setAccessible(true);
+var myTap = tapField.get(agent);
+var foreign = ch.pipeline().get("justmc_agent_tap");
+if (myTap != foreign && ch.pipeline().get("justmc_agent_tap_own") == null) {
+  ch.pipeline().addBefore("packet_handler", "justmc_agent_tap_own", myTap);
+  p("добавлен");
+} else {
+  p("уже подключён");
+}

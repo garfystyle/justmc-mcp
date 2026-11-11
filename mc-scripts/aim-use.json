@@ -1,0 +1,7 @@
+{
+  "name": "aim-use",
+  "kind": "js",
+  "description": "Берёт слот, наводит взгляд на точку и делает взмах: args.slot, args.x,y,z, args.after",
+  "params": [],
+  "updated": "2026-11-07T19:28:17.106Z"
+}

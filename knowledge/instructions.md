@@ -1,0 +1,4 @@
+JustMC Creative+ code is written in Xero (.xero), never raw JSON. Load the `justmc` skill first: it holds the whole language on one page. Without the skill: guide(topic="start", full=true).
+Loop: write the code → check until clean → test with a scenario that proves the behaviour. Names: find. Patterns: ask. guide(topic) lists sections, guide(topic, section) returns one: do not read whole topics up front.
+Start a session with world(action="status"): a warning that MCP code is newer than the process means the tools are stale, ask to restart Claude Code. No world file: world(action="adopt"), without path only if the world is empty.
+The server is shared: never push a world to failure to measure it, keep value.cpu_usage under 50, stop on a complaint or a ☠ line. Never change the client language or settings to make a tool work.
