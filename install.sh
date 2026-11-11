@@ -31,5 +31,5 @@ cp -R "$TEMP/justmc-mcp-main/." "$APP/"
 
 cd "$APP"
 echo "Ставлю зависимости…"
-npm ci --omit=dev --no-audit --no-fund --loglevel=error
+npm ci --omit=dev --no-audit --no-fund --update-notifier=false --loglevel=error
 node scripts/setup.mjs "$@"

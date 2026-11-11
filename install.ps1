@@ -35,7 +35,7 @@ try {
     Push-Location $app
     try {
         Write-Host 'Ставлю зависимости…'
-        & npm ci --omit=dev --no-audit --no-fund --loglevel=error
+        & npm ci --omit=dev --no-audit --no-fund --update-notifier=false --loglevel=error
         if ($LASTEXITCODE -ne 0) { Stop-Install 'npm ci не прошёл' }
         & node scripts/setup.mjs @args
         if ($LASTEXITCODE -ne 0) { Stop-Install 'настройка не прошла' }

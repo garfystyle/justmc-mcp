@@ -614,8 +614,9 @@ function newest(dir) {
   return best;
 }
 
-function script(name) {
-  const result = spawnSync(NODE, [join(ROOT, "scripts", name)], { stdio: "inherit", cwd: ROOT });
+function script(name, quiet = false) {
+  const result = spawnSync(NODE, [join(ROOT, "scripts", name)], { stdio: quiet ? "pipe" : "inherit", cwd: ROOT, encoding: "utf8" });
+  if (result.status !== 0 && quiet) console.log(`${result.stdout ?? ""}${result.stderr ?? ""}`.trim().split(/\r?\n/).slice(-8).join("\n"));
   return result.status === 0;
 }
 
@@ -625,7 +626,7 @@ function knowledge() {
   const built = existsSync(DB_FILE) ? statSync(DB_FILE).mtimeMs : 0;
   if (built && !flags.has("--modules") && Math.max(newest(REFERENCE), newest(RAW)) <= built) return null;
   console.log("Собираю базу знаний…");
-  return script("learn.mjs") ? null : "база знаний не собралась: закрой программы с запущенным MCP и запусти npm run learn";
+  return script("learn.mjs", true) ? null : "база знаний не собралась: закрой программы с запущенным MCP и запусти npm run learn";
 }
 
 function main() {
@@ -675,7 +676,7 @@ function main() {
   if (!REMOVE) {
     console.log("\nПерезапусти программы, чтобы они подхватили сервер. Другая программа: команда");
     console.log(`  ${NODE} ${SERVER}`);
-    if (!existsSync(RAW) || !readdirSync(RAW).length) console.log("Примеры чужого кода (examples): node scripts/setup.mjs --modules, около 50 минут.");
+    if (!existsSync(RAW) || !readdirSync(RAW).length) console.log(`Примеры чужого кода (examples): ${NODE} ${join(ROOT, "scripts", "setup.mjs")} --modules, около 50 минут.`);
   }
   if (rows.some((r) => r[0] === "✗") || trouble) process.exitCode = 1;
 }
