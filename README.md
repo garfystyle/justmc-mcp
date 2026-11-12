@@ -13,7 +13,6 @@
   <img alt="Node" src="https://img.shields.io/badge/Node-22.13%2B-6366f1?style=flat-square">
   <img alt="Minecraft" src="https://img.shields.io/badge/Minecraft-26.2-3de8f5?style=flat-square">
   <img alt="MCP" src="https://img.shields.io/badge/MCP-сервер%20и%20скилл-f25555?style=flat-square">
-  <img alt="модули" src="https://img.shields.io/badge/знания-1075%20модулей-3a7cf2?style=flat-square">
 </p>
 
 ```text
