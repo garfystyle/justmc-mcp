@@ -630,7 +630,7 @@ function knowledge() {
 }
 
 function main() {
-  console.log(`JustMC MCP ${VERSION}${DRY ? " (проба, без записи)" : ""}`);
+  console.log(`JustMCP ${VERSION}${DRY ? " (проба, без записи)" : ""}`);
   console.log(`сервер: ${NODE} ${SERVER}\n`);
   const trouble = knowledge();
   const rows = [];
