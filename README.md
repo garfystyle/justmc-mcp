@@ -172,7 +172,7 @@ Claude Code (`~/.claude/skills`), Antigravity, Kiro, Copilot в VS Code, Cline �
 | `src/xero` | ядро Xero: сборка, формат, чтение кода мира, сверка, проверка читаемости |
 | `src/game` | заливка, сценарии проверки, управление игроком, скрипты |
 | `agent/` | агент на Java для живого клиента, собранный лежит в `vendor/agent.jar` |
-| `knowledge/guide` | руководство по темам, у рецептов есть сценарии в `guide/tests` |
+| `knowledge/guide` | руководство по темам |
 | `skill/` | скилл `justmc`: язык и правила работы |
 | `mc-scripts/` | библиотека скриптов: BeanShell, сценарии на JS, записи игрока |
 
@@ -201,8 +201,6 @@ Claude Code (`~/.claude/skills`), Antigravity, Kiro, Copilot в VS Code, Cline �
 | `npm run skill` | обновить только скилл Claude Code |
 | `npm run sync` | для разработки: берёт ядро Xero и справочник из соседней папки `justmc/xero` |
 | `npm run agent` | собирает агента в `vendor/agent.jar` |
-| `npm run verify` | проверяет код руководства сборкой и читаемостью, `-- --game` прогоняет рецепты на сервере |
-| `npm test` | тесты без игры |
 | `node scripts/cli.mjs <инструмент> '<json>'` | вызвать инструмент из терминала |
 
 Скачиваются только открытые и бесплатные модули. Их код лежит локально в `data/` и в репозиторий не входит: у него

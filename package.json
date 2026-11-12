@@ -16,10 +16,8 @@
     "crawl": "node scripts/crawl.mjs",
     "learn": "node scripts/learn.mjs",
     "agent": "node scripts/build-agent.mjs",
-    "verify": "node scripts/verify-guide.mjs",
     "skill": "node scripts/install-skill.mjs",
-    "sync": "node scripts/sync.mjs",
-    "test": "node --test test/*.test.mjs"
+    "sync": "node scripts/sync.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
