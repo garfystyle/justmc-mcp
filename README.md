@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="branding/logo.png" width="128" alt="JustMC MCP">
+  <img src="branding/logo.png" width="128" alt="JustMCP">
 </p>
 
-<h1 align="center">JustMC MCP</h1>
+<h1 align="center">JustMCP</h1>
 
 <p align="center">
   MCP-сервер для <b>JustMC Creative+</b>.<br>
