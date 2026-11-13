@@ -37,6 +37,7 @@ public final class Agent {
     private static final int RING_NOISE = 32768;
     private static final int MAX_FAILURES = 40;
     private static final String LIVE_COPY = "justmc.agent.live";
+    private static final Runnable MINE = Agent::shutdown;
 
     private static volatile Agent live;
 
@@ -72,13 +73,14 @@ public final class Agent {
         if (live != null) live.stop();
         if (System.getProperties().get(LIVE_COPY) instanceof Runnable other) other.run();
         live = new Agent(workDir, token);
-        System.getProperties().put(LIVE_COPY, (Runnable) Agent::shutdown);
+        System.getProperties().put(LIVE_COPY, MINE);
         return Js.obj("port", live.http.port(), "version", VERSION).toString();
     }
 
     public static synchronized void shutdown() {
         if (live != null) live.stop();
         live = null;
+        System.getProperties().remove(LIVE_COPY, MINE);
     }
 
     private void stop() {

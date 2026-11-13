@@ -278,7 +278,8 @@ function claudeCode(tool) {
   const exe = which("claude");
   if (!exe) throw new Problem("нет команды claude");
   const got = run(exe, ["mcp", "get", NAME]);
-  const mine = got.ok && got.text.includes(SERVER);
+  const flat = (s) => (WIN ? s.replace(/\\/g, "/").toLowerCase() : s);
+  const mine = got.ok && flat(got.text).includes(flat(SERVER));
   if (!REMOVE && mine) return false;
   if (REMOVE && !got.ok) return false;
   if (DRY) return true;
@@ -630,10 +631,13 @@ function knowledge() {
 }
 
 function main() {
-  console.log(`JustMCP ${VERSION}${DRY ? " (проба, без записи)" : ""}`);
-  console.log(`сервер: ${NODE} ${SERVER}\n`);
-  const trouble = knowledge();
+  const json = flags.has("--json");
+  const say = json ? () => {} : (...a) => console.log(...a);
+  say(`JustMCP ${VERSION}${DRY ? " (проба, без записи)" : ""}`);
+  say(`сервер: ${NODE} ${SERVER}\n`);
+  const trouble = json ? null : knowledge();
   const rows = [];
+  const report = [];
   const on = new Set();
   const missing = [];
   for (const tool of TOOLS) {
@@ -644,6 +648,7 @@ function main() {
     } catch {}
     if (!found) {
       missing.push(tool.title);
+      report.push({ id: tool.id, title: tool.title, found: false, connected: false });
       continue;
     }
     on.add(tool.id);
@@ -653,13 +658,16 @@ function main() {
         ? changed ? (DRY ? "будет убран" : "убран") : "не был подключён"
         : changed ? (DRY ? "будет подключён" : "подключён") : "уже подключён";
       rows.push(["✓", tool.title, tool.note && !REMOVE ? `${what}; ${tool.note}` : what]);
+      report.push({ id: tool.id, title: tool.title, found: true, connected: REMOVE ? false : !changed || !DRY, note: tool.note ?? "" });
     } catch (e) {
-      rows.push(["✗", tool.title, e instanceof Problem ? e.message : `ошибка: ${e.message}`]);
+      const why = e instanceof Problem ? e.message : `ошибка: ${e.message}`;
+      rows.push(["✗", tool.title, why]);
+      report.push({ id: tool.id, title: tool.title, found: true, connected: false, error: why });
     }
   }
   const width = Math.max(...rows.map((r) => r[1].length), 10);
-  for (const [mark, title, text] of rows) console.log(`  ${mark} ${title.padEnd(width)}  ${text}`);
-  if (!rows.length) console.log("  ни одной знакомой программы не нашлось");
+  for (const [mark, title, text] of rows) say(`  ${mark} ${title.padEnd(width)}  ${text}`);
+  if (!rows.length) say("  ни одной знакомой программы не нашлось");
 
   const placed = [];
   for (const skill of SKILLS) {
@@ -667,16 +675,26 @@ function main() {
     try {
       if (placeSkill(skill.dir())) placed.push(skill.dir());
     } catch (e) {
-      console.log(`  ✗ скилл: ${e.message}`);
+      say(`  ✗ скилл: ${e.message}`);
     }
   }
-  if (placed.length) console.log(`\nСкилл ${NAME} ${REMOVE ? "убран из" : "лежит в"}: ${placed.join(", ")}`);
-  if (missing.length && !REMOVE) console.log(`\nНе найдены: ${missing.join(", ")}.`);
-  if (trouble) console.log(`\n${trouble}`);
+  const modules = existsSync(RAW) && readdirSync(RAW).length > 0;
+  if (!DRY) {
+    mkdirSync(WORKSPACE, { recursive: true });
+    writeFileSync(join(WORKSPACE, "install.json"), `${JSON.stringify({ root: ROOT, node: NODE, version: VERSION }, null, 2)}\n`);
+  }
+  if (json) {
+    const skills = SKILLS.map((s) => join(s.dir(), NAME)).filter((d) => existsSync(join(d, "SKILL.md")) && ours(d));
+    console.log(JSON.stringify({ version: VERSION, root: ROOT, node: NODE, tools: report, skills, modules }));
+    return;
+  }
+  if (placed.length) say(`\nСкилл ${NAME} ${REMOVE ? "убран из" : "лежит в"}: ${placed.join(", ")}`);
+  if (missing.length && !REMOVE) say(`\nНе найдены: ${missing.join(", ")}.`);
+  if (trouble) say(`\n${trouble}`);
   if (!REMOVE) {
-    console.log("\nПерезапусти программы, чтобы они подхватили сервер. Другая программа: команда");
-    console.log(`  ${NODE} ${SERVER}`);
-    if (!existsSync(RAW) || !readdirSync(RAW).length) console.log(`Примеры чужого кода (examples): ${NODE} ${join(ROOT, "scripts", "setup.mjs")} --modules, около 50 минут.`);
+    say("\nПерезапусти программы, чтобы они подхватили сервер. Другая программа: команда");
+    say(`  ${NODE} ${SERVER}`);
+    if (!modules) say(`Примеры чужого кода (examples): ${NODE} ${join(ROOT, "scripts", "setup.mjs")} --modules, около 50 минут.`);
   }
   if (rows.some((r) => r[0] === "✗") || trouble) process.exitCode = 1;
 }

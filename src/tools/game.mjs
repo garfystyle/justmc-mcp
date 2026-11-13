@@ -90,7 +90,7 @@ export function registerGame(server) {
       const r = {};
       r.bridge = await bridgePing();
       r.xerocode = await link.status().catch((e) => ({ ok: false, error: e.message }));
-      if (r.bridge.ok) {
+      if (r.bridge.ok || r.xerocode.ok) {
         r.agent = await ping().catch((e) => ({ error: e.message }));
         if (r.agent.inWorld) {
           const s = await player.state();

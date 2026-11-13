@@ -55,6 +55,10 @@ try {
 } finally {
   rmSync(args, { force: true });
 }
+execFileSync(join(JDK, "bin", "jar"), ["xf", bsh], { cwd: CLASSES, stdio: "inherit" });
+for (const name of readdirSync(join(CLASSES, "META-INF"))) {
+  if (/^(MANIFEST\.MF|.*\.(SF|RSA|DSA))$/i.test(name)) rmSync(join(CLASSES, "META-INF", name), { force: true });
+}
 mkdirSync(VENDOR, { recursive: true });
 execFileSync(join(JDK, "bin", "jar"), ["--create", "--file", join(VENDOR, "agent.jar"), "-C", CLASSES, "."], { stdio: "inherit" });
 console.log(`агент собран: ${join(VENDOR, "agent.jar")}`);
