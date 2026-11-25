@@ -201,6 +201,8 @@ when player_join {
 | формула, `${}` | `@killer value.food_level + 1`, `"${@x value.name}"` | те же, +1 блок |
 
 - Цели нет у функций, `wait`, действий с переменными, присваивания, переменных, `loc`. `@last` только у `entity.*`.
+- Выборки сущностей игроков не видят: в мире с одним игроком `entity_by_name(ник)`, `all_entities()`, `random_entity()`, `entity_by_conditional(…)` и `value.all_entities_names` пусты. Игроков выбирают `player_by_name`, `all_players()`, `player_by_conditional`.
+- `@default_entity` — сущность события, а не игрок: в `player_pickup_item` это подобранный предмет (`@default_entity value.entity_type` — `item`, имя `Stone`), в `player_right_click_entity` — кликнутый моб. Игрок — `@default`, `event_target()` выбирает его же.
 
 ## Функции и процессы
 

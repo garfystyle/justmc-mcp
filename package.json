@@ -1,6 +1,6 @@
 {
   "name": "justmc-mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "MCP для JustMC Creative+: код на Xero, знания из модулей, мир и игрок",
   "type": "module",
   "main": "src/index.mjs",

@@ -1,9 +1,9 @@
-import { writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, resolve, sep } from "node:path";
 import { z } from "zod";
-import { decompile } from "../xero/core.mjs";
+import { decompile, restore } from "../xero/core.mjs";
 import { bridgePing, connect, firstLines, ping, post } from "../game/agent.mjs";
-import { adoptWorld, knownWorld, worldOf } from "../game/deploy.mjs";
+import { adoptWorld, knownWorld, pullWorld, worldOf } from "../game/deploy.mjs";
 import { staleParts } from "../game/freshness.mjs";
 import * as link from "../game/link.mjs";
 import * as player from "../game/player.mjs";
@@ -69,9 +69,9 @@ export function drawRegion(r) {
 export function registerGame(server) {
   register(server, "world", {
     title: "Мир и состояние игры",
-    description: "status: что запущено, где игрок, id мира, TPS и пинг сервера, в каком состоянии мир (phase) и когда код падал (lastStop). read: код мира на Xero из файла, который пишется при каждой заливке (out: записать в файл). Из игры мир не читается: правки руками в /dev файл не видит. adopt: начать мир без файла: без path мир считается пустым, path: json с handlers. log: ответы сервера за seconds секунд, по умолчанию 120. commands: дерево команд сервера (filter: regex).",
+    description: "status: что запущено, где игрок, id мира, TPS и пинг сервера, в каком состоянии мир (phase) и когда код падал (lastStop). read: код мира на Xero из файла, который пишется при каждой заливке (out: записать в файл). Если заливка положила в мир исходник, read отдаёт сами файлы проекта, а out тогда папка. Правки руками в /dev файл не видит: тогда pull. pull: прочитать код из игры (только в /dev, обычно секунды, без ранга Meteor+ построчно минуты) и записать в файл мира, прежний уходит в бэкап; не прочиталась хоть одна строка — файл не трогается. adopt: начать мир без файла: без path мир считается пустым, path: json с handlers. log: ответы сервера за seconds секунд, по умолчанию 120. commands: дерево команд сервера (filter: regex).",
     schema: {
-      action: z.enum(["status", "read", "adopt", "log", "commands"]),
+      action: z.enum(["status", "read", "pull", "adopt", "log", "commands"]),
       out: z.string().optional(),
       path: z.string().optional(),
       filter: z.string().optional(),
@@ -80,6 +80,7 @@ export function registerGame(server) {
     readOnly: true,
   }, async ({ action, out, path, filter, seconds = LOG_SECONDS }) => {
     if (action === "adopt") return adoptWorld(path);
+    if (action === "pull") return pullWorld();
     if (action === "log") return link.log(Date.now() - seconds * 1000);
     if (action === "commands") {
       const pattern = filter ? new RegExp(filter, "i") : null;
@@ -105,11 +106,33 @@ export function registerGame(server) {
     }
     const { status, handlers } = await knownWorld();
     if (!handlers.length) return `В мире ${status.world} кода нет.`;
-    const r = decompile(JSON.stringify({ handlers }));
-    const head = `Мир ${status.world}: строк ${r.lines}, блоков ${r.blocks}.`;
-    if (!out) return `${head}\n\n${clip(r.text)}`;
-    writeFileSync(out, r.text);
-    return `${head}\nЗаписано: ${resolve(out)}`;
+    const back = restore(JSON.stringify({ handlers }));
+    const whole = (back.found ?? []).filter((f) => f.complete);
+    if (!whole.length) {
+      const r = decompile(JSON.stringify({ handlers }));
+      const head = `Мир ${status.world}: строк ${r.lines}, блоков ${r.blocks}.`;
+      if (!out) return `${head}\n\n${clip(r.text)}`;
+      writeFileSync(out, r.text);
+      return `${head}\nЗаписано: ${resolve(out)}`;
+    }
+    const parts = [`Мир ${status.world}: строк ${handlers.length}, исходник из мира — наборов ${whole.length}.`];
+    for (const f of whole) parts.push(`Набор ${f.id}: файлов ${f.files.length}, строк мира узнано ${f.matched} из ${f.expected}${f.matched === f.expected ? "" : " (остальные в мире другие)"}.`);
+    for (const f of (back.found ?? []).filter((x) => !x.complete)) parts.push(`Набор ${f.id} неполный: кусков ${f.have} из ${f.total}.`);
+    if (out) {
+      const dir = resolve(out);
+      for (const f of whole) for (const [rel, body] of f.files) {
+        const target = resolve(dir, rel);
+        if (!target.startsWith(dir + sep)) continue;
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, body);
+      }
+      if (back.rest) writeFileSync(resolve(dir, "world.xero"), back.rest);
+      parts.push(`Записано в папку ${dir}${back.rest ? ", строки без исходника — world.xero" : ""}.`);
+      return parts.join("\n");
+    }
+    for (const f of whole) for (const [rel, body] of f.files) parts.push(`\n── ${rel} ──\n${body}`);
+    if (back.rest) parts.push(`\n── строки мира без исходника (${back.restLines}) ──\n${back.rest}`);
+    return clip(parts.join("\n"));
   });
 
   register(server, "player", {

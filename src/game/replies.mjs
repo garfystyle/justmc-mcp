@@ -56,6 +56,6 @@ export function serverStats(hudSnapshot) {
   return {
     tps: read(/TPS:\s*([\d.]+)/),
     ping: read(/(?:Пинг|Пінг|Ping):\s*(\d+)/),
-    online: read(/(?:Онлайн|Online):\s*(\d+)/),
+    serverOnline: read(/(?:Онлайн|Online):\s*(\d+)/),
   };
 }

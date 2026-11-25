@@ -119,13 +119,21 @@ export class Project {
 
   build() {
     const r = call("build", this.name, this.text, this.read);
+    let module = r.module;
+    let sources = null;
+    if (r.ok && r.files) {
+      const s = call("stamp", r.module, JSON.stringify(r.files));
+      if (s.fits) module = s.module;
+      sources = { fits: s.fits, chunks: s.chunks, room: s.room, files: r.files.length };
+    }
     return {
       ok: r.ok,
       diagnostics: this.diagnostics(r.diagnostics ?? []),
-      module: r.module,
+      module,
       lines: r.lines,
       blocks: r.blocks,
       connected: r.connected ?? [],
+      sources,
     };
   }
 }
@@ -135,6 +143,7 @@ export const rawFormat = (text) => core.format(text);
 export const rawSymbols = (text) => core.symbols(text);
 export const rawVariables = (text) => core.variables(text);
 export const decompile = (world) => call("decompile", world);
+export const restore = (world) => call("restore", world);
 export const plan = (copy, module) => call("plan", copy ?? "", module);
 export const symbols = (text) => call("symbols", text);
 export const variables = (text) => call("variables", text);

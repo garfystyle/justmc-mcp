@@ -15,5 +15,5 @@ export const SCRIPTS = process.env.JUSTMC_SCRIPTS || join(ROOT, "mc-scripts");
 export const WORKSPACE = process.env.JUSTMC_WORKSPACE || join(homedir(), ".justmc-mcp");
 export const AGENT_HOME = join(WORKSPACE, "agent");
 export const AGENT_FILE = join(AGENT_HOME, "session.json");
-export const LINK_FILE = join(homedir(), ".xerocode", "link.json");
+export const LINK_FILE = process.env.XEROCODE_LINK || join(homedir(), ".xerocode", "link.json");
 export const XERO_SOURCE = process.env.XERO_SOURCE || join(ROOT, "..", "justmc", "xero");

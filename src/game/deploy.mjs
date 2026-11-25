@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { Project, plan } from "../xero/core.mjs";
 import { WORKSPACE } from "../paths.mjs";
@@ -9,11 +9,13 @@ import { commandGap, sleep, state } from "./player.mjs";
 import { REPLY } from "./replies.mjs";
 
 const LISTED = 12;
+const SOURCE_MARK = "xs1:";
 const UPLOAD_RETRIES = 3;
 const UPLOAD_RETRY_MS = 3000;
 const NETWORK_FAILURE = /связь оборвалась|соединени|timed? ?out|ECONN/i;
 const SIZE_WARNING = 0.8;
 const LINES_WARNING = 325;
+const KEEP_BACKUPS = 40;
 const listed = (items) => items.slice(0, LISTED).join(", ") + (items.length > LISTED ? ` … и ещё ${items.length - LISTED}` : "");
 
 export function open(k, { code, path, debug }) {
@@ -38,6 +40,7 @@ const strip = (value) => {
   const out = {};
   for (const key of Object.keys(value).sort()) {
     if (key === "position") continue;
+    if (key === "custom_data" && typeof value[key] === "string" && value[key].startsWith(SOURCE_MARK)) continue;
     out[key] = key === "item" || key === "default_value" ? "*" : strip(value[key]);
   }
   return out;
@@ -48,8 +51,20 @@ const owned = (world, name) => join(WORKSPACE, "owned", `${world}${name ? `-${na
 
 function readOwned(world, name) {
   const file = owned(world, name);
-  return existsSync(file) ? new Set(JSON.parse(readFileSync(file, "utf8"))) : new Set();
+  return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
 }
+
+const claimer = (mine) => {
+  const left = new Map();
+  for (const print of mine) left.set(print, (left.get(print) ?? 0) + 1);
+  return (handler) => {
+    const print = fingerprint(handler);
+    const count = left.get(print) ?? 0;
+    if (!count) return false;
+    left.set(print, count - 1);
+    return true;
+  };
+};
 
 function saveOwned(world, name, handlers) {
   mkdirSync(join(WORKSPACE, "owned"), { recursive: true });
@@ -62,7 +77,13 @@ function backup(world, handlers) {
   mkdirSync(dir, { recursive: true });
   const file = join(dir, `${world}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
   writeFileSync(file, JSON.stringify({ handlers }));
+  pruneBackups(dir, world);
   return file;
+}
+
+export function pruneBackups(dir, world, keep = KEEP_BACKUPS) {
+  const own = readdirSync(dir).filter((f) => f.startsWith(`${world}-`) && f.endsWith(".json")).sort();
+  for (const f of own.slice(0, Math.max(0, own.length - keep))) rmSync(join(dir, f), { force: true });
 }
 
 const worldFile = (world) => join(WORKSPACE, "worlds", `${world}.json`);
@@ -70,7 +91,7 @@ const worldFile = (world) => join(WORKSPACE, "worlds", `${world}.json`);
 export function readWorldFile(world) {
   const file = worldFile(world);
   if (!existsSync(file)) {
-    throw new GameError(`Нет файла кода мира ${world}: ${file}. Мир из игры не читается, а заливка идёт с заменой всего кода. Мир пустой: world action=adopt без path. В мире есть код: world action=adopt path=<json с handlers>, иначе он сотрётся.`);
+    throw new GameError(`Нет файла кода мира ${world}: ${file}. Заливка идёт с заменой всего кода, поэтому сначала: в мире есть код — world action=pull в /dev (прочитать его из игры) или world action=adopt path=<json с handlers>; мир пустой — world action=adopt без path.`);
   }
   return JSON.parse(readFileSync(file, "utf8")).handlers;
 }
@@ -108,6 +129,31 @@ export async function adoptWorld(path) {
   return `Файл мира ${status.world}: строк ${handlers.length}.`;
 }
 
+export async function pullWorld() {
+  const { world, dev } = await currentWorld();
+  if (!dev) throw new GameError("код мира читается из /dev: перейди туда и повтори");
+  const { handlers, unread } = await link.world();
+  if (unread === undefined) throw new GameError("этот XeroCode не говорит, все ли строки мира прочитались: обнови мод, файл мира не тронут");
+  if (unread > 0) throw new GameError(`не прочиталось строк: ${unread} (сервер не кладёт большие строки в шаблон, а /editor download не отдал код). С таким файлом следующая заливка сотрёт эти строки, поэтому файл мира не тронут.`);
+  const file = worldFile(world);
+  const known = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")).handlers : null;
+  const saved = known?.length ? backup(world, known) : null;
+  saveWorldFile(world, handlers);
+  const notes = [`Код мира ${world} прочитан из игры: строк ${handlers.length}. Файл мира обновлён.`];
+  if (known) {
+    const p = plan(known.length ? JSON.stringify({ handlers: known }) : "", JSON.stringify({ handlers }));
+    const edited = p.changed.length - p.moved;
+    notes.push(edited || p.added.length || p.missing.length
+      ? `Против прежнего файла: изменено ${edited}, появилось ${p.added.length}, пропало ${p.missing.length}.`
+        + (p.changed.length ? `\nизменено: ${listed(p.changed)}` : "") + (p.added.length ? `\nпоявилось: ${listed(p.added)}` : "")
+        + (p.missing.length ? `\nпропало: ${listed(p.missing)}` : "")
+      : "Против прежнего файла ничего не изменилось.");
+  }
+  if (saved) notes.push(`Прежний файл: ${saved}`);
+  notes.push("Код — world действие read.");
+  return notes.join("\n");
+}
+
 const summary = (p) =>
   [`Без изменений ${p.same}, изменено ${p.changed.length}${p.moved ? `, сдвинуто ${p.moved}` : ""}, новых ${p.added.length}, сотрётся ${p.missing.length}.`,
     p.changed.length ? `изменено: ${listed(p.changed)}` : "",
@@ -115,7 +161,8 @@ const summary = (p) =>
     p.missing.length ? `сотрётся: ${listed(p.missing)}` : ""].filter(Boolean).join("\n");
 
 export function merge(mine, handlers, project) {
-  const keep = handlers.filter((h) => !mine.has(fingerprint(h)));
+  const ours = claimer(mine);
+  const keep = handlers.filter((h) => !ours(h));
   const names = new Set(project.filter((h) => h.type !== "event").map((h) => `${h.type}:${h.name}`));
   const sameName = (h) => h.type !== "event" && names.has(`${h.type}:${h.name}`);
   const clashes = keep.filter(sameName).map((h) => `${h.type} ${h.name}`);
@@ -157,8 +204,8 @@ async function uploadModule(module) {
 
 export async function removeProject({ name, dry = false }) {
   const { status, handlers } = await knownWorld();
-  const mine = readOwned(status.world, name);
-  const kept = handlers.filter((h) => !mine.has(fingerprint(h)));
+  const ours = claimer(readOwned(status.world, name));
+  const kept = handlers.filter((h) => !ours(h));
   const removed = handlers.length - kept.length;
   if (!removed) return { notes: ["Строк этого проекта в мире нет."], warnings: [] };
   if (dry) return { notes: [`Сотрётся строк: ${removed}, останется ${kept.length}.`], warnings: [] };
@@ -183,6 +230,9 @@ export async function deploy(built, { mode = "project", drop = false, dry = fals
     warnings.push(`${foreign} ${drop ? "Они заменены." : "Заливка откажет без drop=true."}`);
   }
   if (target.kept) notes.push(`Другие строки мира сохранены: ${target.kept}.`);
+  if (built.sources && !built.sources.fits) {
+    warnings.push(`Исходник в мир не положен: нужно строк ${built.sources.chunks > 1e9 ? "больше, чем есть (он больше 16 МБ)" : built.sources.chunks}, свободных ${built.sources.room}. Из мира код прочитается декомпиляцией.`);
+  }
   if (target.twins.length) warnings.push(`В мире есть другие строки этих событий, сработают обе: ${listed(target.twins)}.`);
   const module = JSON.stringify({ handlers: target.handlers });
   const p = plan(handlers.length ? JSON.stringify({ handlers }) : "", module);
